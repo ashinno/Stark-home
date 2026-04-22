@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hermes_home"
+version = "0.1.0"
+description = "Stark — FastAPI bridge between the Stark UI and a hermes-agent install."
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "pydantic>=2.9",
+  "httpx>=0.27",
+  "sse-starlette>=2.1",
+  # Vendored hermes-agent is added via `pip install -e sidecar/hermes_home/vendor/hermes_agent`
+  # during the build_runtime.sh bake step, not pulled from PyPI.
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["hermes_home"]

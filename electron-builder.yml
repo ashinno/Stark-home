@@ -1,0 +1,36 @@
+appId: com.stark.app
+productName: Stark
+copyright: Copyright © 2026 Stark Contributors
+
+directories:
+  output: dist
+  buildResources: resources
+
+files:
+  - out/**/*
+  - package.json
+  - "!**/*.map"
+
+asar: true
+
+mac:
+  category: public.app-category.productivity
+  darkModeSupport: true
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  icon: resources/icon.png
+  entitlements: resources/entitlements.mac.plist
+  entitlementsInherit: resources/entitlements.mac.plist
+  target:
+    - target: dmg
+      arch: [universal]
+  notarize:
+    teamId: "${APPLE_TEAM_ID}"
+
+dmg:
+  sign: true
+  writeUpdateInfo: true
+
+publish:
+  provider: github
+  releaseType: release

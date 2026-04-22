@@ -1,0 +1,333 @@
+@import '@fontsource/instrument-serif/400.css';
+@import '@fontsource/instrument-serif/400-italic.css';
+@import '@fontsource/geist-sans/300.css';
+@import '@fontsource/geist-sans/400.css';
+@import '@fontsource/geist-sans/500.css';
+@import '@fontsource/geist-sans/600.css';
+@import '@fontsource-variable/jetbrains-mono/wght.css';
+
+@import 'tailwindcss';
+
+/* ────────────────────────────────────────────────────────────
+ * STARK — a native control center for Hermes
+ *
+ * Light + dark, industrial, precise. Instrument Serif for display
+ * moments; Geist Sans for body; JetBrains Mono for technical text.
+ * Electric-blue primary + signal-amber for approvals.
+ * ─────────────────────────────────────────────────────────── */
+
+@theme {
+  --font-display: 'Instrument Serif', ui-serif, Georgia, serif;
+  --font-sans:
+    'Geist Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono:
+    'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+}
+
+/* ─── Dark (default) ─────────────────────────────────────── */
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #0a0b0f;
+  --bg-raised: #111319;
+  --surface: #161922;
+  --surface-2: #1d2130;
+  --surface-3: #262a3b;
+  --line: #262a3b;
+  --line-strong: #3a3f55;
+
+  --fg: #eaecf4;
+  --fg-muted: #a4aac0;
+  --fg-dim: #70748a;
+  --fg-ghost: #4b4e60;
+
+  --primary: #6b8bff;
+  --primary-hover: #7e9bff;
+  --primary-ink: #08091a;
+  --primary-wash: rgba(107, 139, 255, 0.12);
+  --primary-glow: rgba(107, 139, 255, 0.45);
+
+  --accent-signal: #f5a524;
+  --accent-signal-wash: rgba(245, 165, 36, 0.14);
+
+  --ok: #2dd4bf;
+  --ok-wash: rgba(45, 212, 191, 0.12);
+  --warn: #f5a524;
+  --warn-wash: rgba(245, 165, 36, 0.14);
+  --bad: #f87171;
+  --bad-wash: rgba(248, 113, 113, 0.12);
+
+  --shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.02) inset, 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-md:
+    0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 22px -12px rgba(0, 0, 0, 0.55);
+  --shadow-lg:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 30px 80px -30px rgba(0, 0, 0, 0.75);
+  --ring-focus: 0 0 0 3px var(--primary-wash);
+}
+
+/* ─── Light ──────────────────────────────────────────────── */
+[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #f6f7fb;
+  --bg-raised: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f0f1f6;
+  --surface-3: #e6e8f0;
+  --line: #e6e8f0;
+  --line-strong: #d0d3df;
+
+  --fg: #0f1120;
+  --fg-muted: #565b74;
+  --fg-dim: #81869b;
+  --fg-ghost: #a8acbd;
+
+  --primary: #3358f5;
+  --primary-hover: #2a4cdf;
+  --primary-ink: #ffffff;
+  --primary-wash: rgba(51, 88, 245, 0.08);
+  --primary-glow: rgba(51, 88, 245, 0.35);
+
+  --accent-signal: #c17600;
+  --accent-signal-wash: rgba(193, 118, 0, 0.08);
+
+  --ok: #0e8f7a;
+  --ok-wash: rgba(14, 143, 122, 0.1);
+  --warn: #c17600;
+  --warn-wash: rgba(193, 118, 0, 0.1);
+  --bad: #c0323b;
+  --bad-wash: rgba(192, 50, 59, 0.08);
+
+  --shadow-sm: 0 1px 2px rgba(15, 17, 32, 0.06);
+  --shadow-md: 0 2px 10px -4px rgba(15, 17, 32, 0.1), 0 12px 30px -20px rgba(15, 17, 32, 0.15);
+  --shadow-lg: 0 30px 80px -30px rgba(15, 17, 32, 0.25);
+  --ring-focus: 0 0 0 3px var(--primary-wash);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  font-feature-settings: 'ss01';
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+  font-feature-settings: 'zero', 'ss01';
+}
+
+/* ─── Window chrome ──────────────────────────────────────── */
+.drag {
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* ─── Scrollbars ─────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--line-strong);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+/* ─── Selection ──────────────────────────────────────────── */
+::selection {
+  background: var(--primary-wash);
+  color: var(--primary);
+}
+
+/* ─── Inputs ─────────────────────────────────────────────── */
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+input,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
+/* ─── Motion ─────────────────────────────────────────────── */
+@keyframes stark-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes stark-in-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes stark-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@keyframes stark-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes stark-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes stark-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes stark-blink {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes stark-typing {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+.anim-in {
+  animation: stark-in 0.4s cubic-bezier(0.22, 0.8, 0.2, 1) both;
+}
+.anim-in-scale {
+  animation: stark-in-scale 0.35s cubic-bezier(0.22, 0.8, 0.2, 1) both;
+}
+
+.stagger > * {
+  animation: stark-in 0.42s cubic-bezier(0.22, 0.8, 0.2, 1) both;
+}
+.stagger > *:nth-child(1) {
+  animation-delay: 0.02s;
+}
+.stagger > *:nth-child(2) {
+  animation-delay: 0.07s;
+}
+.stagger > *:nth-child(3) {
+  animation-delay: 0.12s;
+}
+.stagger > *:nth-child(4) {
+  animation-delay: 0.17s;
+}
+.stagger > *:nth-child(5) {
+  animation-delay: 0.22s;
+}
+.stagger > *:nth-child(6) {
+  animation-delay: 0.27s;
+}
+.stagger > *:nth-child(7) {
+  animation-delay: 0.32s;
+}
+.stagger > *:nth-child(8) {
+  animation-delay: 0.37s;
+}
+.stagger > *:nth-child(n + 9) {
+  animation-delay: 0.4s;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─── Atmosphere ─────────────────────────────────────────── */
+.stark-bg {
+  position: relative;
+  background:
+    radial-gradient(
+      900px 400px at 80% -200px,
+      color-mix(in srgb, var(--primary) 10%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      700px 320px at 10% 110%,
+      color-mix(in srgb, var(--primary) 6%, transparent),
+      transparent 55%
+    ),
+    var(--bg);
+}
+
+.hairline {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--line-strong) 15%,
+    var(--line-strong) 85%,
+    transparent
+  );
+}
