@@ -106,50 +106,51 @@ export function ProfilePicker({
 
   return (
     <div className="relative">
+      {/* Compact pill — avatar + short name + caret. ~130-150px depending on name. */}
       <button
         ref={anchorRef}
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          'no-drag flex min-w-[260px] items-center gap-3 rounded-[14px] border border-[#2A314A]',
-          'bg-[#151926]/95 px-3 py-1.5 text-[11px] shadow-[0_14px_36px_-26px_rgba(80,105,190,0.8)]',
-          'hover:border-[#5569B8] hover:bg-[#191E2E] transition-colors',
+          'no-drag flex items-center gap-2 rounded-[var(--radius-sm)] border',
+          'border-[var(--line)] bg-[var(--surface-2)]/70 px-2 py-1 transition-colors',
+          'hover:border-[var(--line-strong)] hover:bg-[var(--surface-2)]',
         )}
-        title={current ? `Profile: ${current.name}` : 'Profile'}
+        title={current ? `Profile: ${current.name} · ${current.model}` : 'Profile'}
       >
         <ProfileAvatar id={current?.id ?? 'default'} size={1} expr="happy" />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-mono text-[16px] uppercase tracking-[0.26em] text-[var(--fg)]">
-            {current?.name ?? 'no profile'}
-          </span>
-          <span className="hidden truncate text-[10px] text-[var(--fg-ghost)] md:block">
-            {current?.model ?? 'no model'}
-          </span>
+        <span className="font-mono max-w-[110px] truncate text-[11px] uppercase tracking-[0.14em] text-[var(--fg)]">
+          {current?.name ?? 'no profile'}
         </span>
-        <ChevronDown className={cn('h-4 w-4 shrink-0 text-[var(--fg-dim)] transition-transform', open && 'rotate-180')} />
+        <ChevronDown
+          className={cn(
+            'h-3 w-3 shrink-0 text-[var(--fg-dim)] transition-transform',
+            open && 'rotate-180',
+          )}
+        />
       </button>
 
       {open && (
         <div
           ref={popRef}
           className={cn(
-            'absolute top-full z-[90] mt-3 w-[420px] overflow-hidden rounded-[18px] border border-[#2A314A]',
-            'bg-[#111520]/95 shadow-[0_30px_90px_-40px_rgba(0,0,0,0.95),0_0_0_1px_rgba(95,119,210,0.12)] backdrop-blur-xl anim-in-scale',
+            'absolute top-full z-[90] mt-2 w-[320px] overflow-hidden rounded-[var(--radius-md)] border',
+            'border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-lg)] anim-in-scale',
             align === 'right' ? 'right-0' : 'left-0',
           )}
         >
-          <div className="flex items-center justify-between border-b border-[#252B40] px-5 py-4">
-            <div className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--fg-ghost)]">
+          <div className="flex items-center justify-between border-b border-[var(--line)] px-3.5 py-2.5">
+            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--fg-ghost)]">
               Hermes profiles
             </div>
             <button
               onClick={load}
-              className="rounded-full p-1.5 text-[var(--fg-dim)] hover:bg-[#1A2031] hover:text-[var(--fg)]"
+              className="rounded-full p-1 text-[var(--fg-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--fg)]"
               title="Refresh"
             >
-              <RefreshCcw className="h-4 w-4" />
+              <RefreshCcw className="h-3 w-3" />
             </button>
           </div>
-          <div className="max-h-[60vh] overflow-y-auto py-2">
+          <div className="max-h-[56vh] overflow-y-auto py-1">
             {profiles.map((p) => (
               <ProfileRow
                 key={p.id}
@@ -188,8 +189,10 @@ function ProfileRow({
       onClick={onPick}
       disabled={busy}
       className={cn(
-        'mx-2 flex w-[calc(100%-1rem)] items-start gap-4 rounded-[14px] px-4 py-3.5 text-left transition-colors',
-        active ? 'bg-[#1B2238] ring-1 ring-[#5367C9]/35' : 'hover:bg-[#171C2A]',
+        'mx-1.5 flex w-[calc(100%-0.75rem)] items-start gap-3 rounded-[var(--radius-sm)] px-3 py-2.5 text-left transition-colors',
+        active
+          ? 'bg-[var(--primary-wash)] ring-1 ring-[var(--primary)]/35'
+          : 'hover:bg-[var(--surface-2)]',
       )}
     >
       <div className="mt-0.5">
@@ -197,9 +200,9 @@ function ProfileRow({
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="text-[15px] font-semibold text-[var(--fg)]">{profile.name}</span>
+          <span className="text-[13px] font-semibold text-[var(--fg)]">{profile.name}</span>
           {profile.is_default && (
-            <span className="font-mono rounded-[7px] border border-[#7C5818] bg-[#2A2115] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#F2AA3D]">
+            <span className="font-mono rounded border border-[var(--accent-signal)]/35 bg-[var(--accent-signal-wash)] px-1.5 py-px text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--accent-signal)]">
               default
             </span>
           )}
@@ -209,23 +212,28 @@ function ProfileRow({
             </span>
           )}
         </div>
-        <div className="mt-0.5 flex items-center gap-2 text-[11.5px] text-[var(--fg-muted)]">
-          <span className="font-mono">{profile.model}</span>
-          <span className="text-[var(--fg-ghost)]">·</span>
-          <span className="font-mono">{profile.provider}</span>
+        <div className="font-mono mt-0.5 truncate text-[10.5px] text-[var(--fg-muted)]">
+          {profile.model} · {profile.provider}
         </div>
-        <div className="font-mono mt-1 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-[var(--fg-ghost)]">
+        <div className="font-mono mt-1 flex items-center gap-1.5 text-[9.5px] uppercase tracking-[0.14em] text-[var(--fg-ghost)]">
           <Circle
-            className={cn('h-2 w-2', gatewayOk ? 'fill-[var(--ok)] text-[var(--ok)]' : 'fill-[var(--fg-ghost)] text-[var(--fg-ghost)]')}
+            className={cn(
+              'h-1.5 w-1.5',
+              gatewayOk
+                ? 'fill-[var(--ok)] text-[var(--ok)]'
+                : 'fill-[var(--fg-ghost)] text-[var(--fg-ghost)]',
+            )}
           />
-          gateway · {profile.gateway}
-          <span>·</span>
-          <span>
-            {typeof profile.skills === 'number' ? `${profile.skills} skills` : 'skills —'}
-          </span>
+          {profile.gateway}
+          {typeof profile.skills === 'number' && (
+            <>
+              <span className="opacity-60">·</span>
+              <span>{profile.skills} skills</span>
+            </>
+          )}
         </div>
       </div>
-      {active && <Check className="mt-2 h-4 w-4 text-[#6F89FF]" />}
+      {active && <Check className="mt-1 h-3.5 w-3.5 shrink-0 text-[var(--primary)]" />}
     </button>
   );
 }
@@ -310,7 +318,7 @@ function ProfileAvatar({
   const hex = hashToHex(id);
   return (
     <span
-      className="inline-flex items-center justify-center overflow-hidden rounded-[10px] border border-[#30384F] bg-[#EEF3FF]"
+      className="inline-flex items-center justify-center overflow-hidden rounded-[8px] border border-[var(--line)] bg-[#EEF3FF]"
       style={{ width: 32 * size, height: 32 * size }}
     >
       <Mascot scale={size} expr={expr} pose="idle" accessory={accessory} bodyColor={hex} />

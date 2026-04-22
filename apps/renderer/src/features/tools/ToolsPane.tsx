@@ -63,44 +63,43 @@ export function ToolsPane() {
   }, []);
 
   return (
-    <div className="flex h-full flex-col bg-[#090B11]">
-      <div className="border-b border-[#202638] px-8 py-6">
+    <div className="flex h-full flex-col bg-[var(--bg)]">
+      <div className="border-b border-[var(--line)] px-8 py-5">
         <SectionHeading
           eyebrow="Tools"
           title="What Hermes can do"
           description="Toggle the capabilities Hermes can use during a run."
         />
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-8 py-8">
-        <div className="stagger mx-auto grid max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
+        <div className="stagger mx-auto grid max-w-6xl grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {TOOLS.map((t) => {
             const on = t.id !== 'delegation' && t.id !== 'mcp' && caps.includes(t.id as Capability);
             const always = t.id === 'delegation' || t.id === 'mcp';
             return (
               <Card
                 key={t.id}
+                glow={on}
                 className={cn(
-                  'group overflow-hidden rounded-[22px] border bg-[#11141E] shadow-[0_22px_70px_-55px_rgba(0,0,0,0.95)]',
-                  on
-                    ? 'border-[#5367C9] ring-1 ring-[#5367C9]/35'
-                    : 'border-[#22283A] hover:border-[#36415F]',
+                  'group overflow-hidden',
+                  on ? 'border-[var(--primary)]/40' : '',
                 )}
               >
-                <div className="min-h-[172px] p-6">
+                <div className="p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div
                         className={cn(
-                          'flex h-11 w-11 items-center justify-center rounded-[14px] border transition-colors',
+                          'flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] transition-colors',
                           on
-                            ? 'border-[#334481] bg-[#182244] text-[#6F89FF]'
-                            : 'border-[#202638] bg-[#171B29] text-[#7E859A] group-hover:text-[#AAB2C8]',
+                            ? 'bg-[var(--primary-wash)] text-[var(--primary)]'
+                            : 'bg-[var(--surface-2)] text-[var(--fg-dim)] group-hover:text-[var(--fg-muted)]',
                         )}
                       >
                         <t.icon className="h-4 w-4" />
                       </div>
                       <div>
-                        <div className="text-[15px] font-semibold text-[#E8EBF5]">{t.title}</div>
+                        <div className="text-[14px] font-medium text-[var(--fg)]">{t.title}</div>
                         {t.needsApproval && <Badge tone="signal">approval</Badge>}
                       </div>
                     </div>
@@ -111,28 +110,37 @@ export function ToolsPane() {
                         onClick={() => toggle(t.id)}
                         disabled={saving === t.id}
                         className={cn(
-                          'relative h-7 w-12 shrink-0 rounded-full transition-colors',
-                          on ? 'bg-[#6681FF]' : 'bg-[#202638]',
+                          'relative h-6 w-10 shrink-0 rounded-full transition-colors',
+                          on ? 'bg-[var(--primary)]' : 'bg-[var(--surface-3)]',
                         )}
                         aria-pressed={on}
                       >
                         <span
                           className={cn(
-                            'absolute top-1 h-5 w-5 rounded-full bg-white transition-transform',
-                            on ? 'translate-x-6' : 'translate-x-1',
+                            'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform',
+                            on ? 'translate-x-[18px]' : 'translate-x-0.5',
                           )}
                         />
                       </button>
                     )}
                   </div>
-                  <p className="mt-7 text-[14px] leading-relaxed text-[#AAB2C8]">{t.description}</p>
-                  <p className="mt-2 text-[12.5px] italic leading-relaxed text-[#777F95]">{t.detail}</p>
+                  <p className="mt-4 text-[13px] leading-relaxed text-[var(--fg-muted)]">
+                    {t.description}
+                  </p>
+                  <p className="mt-1 text-[12px] italic leading-relaxed text-[var(--fg-dim)]">
+                    {t.detail}
+                  </p>
                 </div>
-                <div className="flex items-center justify-between border-t border-[#22283A] bg-[#141927] px-6 py-4">
-                  <div className="font-mono flex min-w-0 items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-[#5D6578]">
+                <div className="flex items-center justify-between border-t border-[var(--line)] bg-[var(--surface-2)]/50 px-5 py-2.5">
+                  <div className="font-mono flex min-w-0 items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-[var(--fg-ghost)]">
                     <ShieldCheck className="h-3 w-3" /> {t.scope}
                   </div>
-                  <Button size="sm" variant="ghost" className="shrink-0" leading={<Settings2 className="h-3 w-3" />}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="shrink-0"
+                    leading={<Settings2 className="h-3 w-3" />}
+                  >
                     Configure
                   </Button>
                 </div>
