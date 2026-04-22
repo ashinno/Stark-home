@@ -21,6 +21,14 @@ class CreateSkill(BaseModel):
     steps: list[str]
 
 
+class InstallSkill(BaseModel):
+    identifier: str
+
+
+class AddTap(BaseModel):
+    repo: str
+
+
 def _toggle_state() -> dict[str, dict]:
     """Per-skill enabled/runs overlay so toggles persist locally."""
     return get_store().read("skill_overlay") or {}
@@ -49,9 +57,90 @@ async def list_skills(profile: str | None = Query(default=None)) -> dict:
             s["last_run"] = o.get("last_run") or s.get("last_run")
         # Pinned/local extras stored in the legacy seed key go on top.
         local = get_store().read("skills") or []
-        custom = [s for s in local if s.get("source") == "local"]
+        custom = [{**s, "source": "app-local"} for s in local if s.get("source") in ("local", "app-local")]
         return {"skills": [*custom, *live], "real": True, "profile": prof}
-    return {"skills": get_store().read("skills") or [], "real": False, "profile": prof}
+    stored = get_store().read("skills") or []
+    return {
+        "skills": [{**s, "source": "app-local"} if s.get("source") == "local" else s for s in stored],
+        "real": False,
+        "profile": prof,
+    }
+
+
+@router.get("/marketplace")
+async def marketplace(
+    profile: str | None = Query(default=None),
+    query: str | None = Query(default=None),
+    source: str = Query(default="all"),
+    page: int = Query(default=1, ge=1),
+    size: int = Query(default=20, ge=1, le=50),
+) -> dict:
+    settings = get_store().read("settings") or {}
+    prof = profile or settings.get("active_profile")
+    if not hermes_cli.available():
+        local = get_store().read("skills") or []
+        return {
+            "skills": [s for s in local if s.get("source") == "marketplace"],
+            "real": False,
+            "profile": prof,
+            "page": page,
+            "pages": 1,
+            "total": 0,
+            "source": source,
+        }
+    try:
+        if query and query.strip():
+            payload = hermes_cli.search_skills(prof, query.strip(), limit=size, source=source)
+            return {**payload, "real": True, "profile": prof, "page": 1, "pages": 1, "total": len(payload["skills"])}
+        payload = hermes_cli.browse_skills(prof, page=page, size=size, source=source)
+        return {**payload, "real": True, "profile": prof}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.get("/marketplace/inspect")
+async def inspect_marketplace_skill(
+    identifier: str = Query(...),
+    profile: str | None = Query(default=None),
+) -> dict:
+    settings = get_store().read("settings") or {}
+    prof = profile or settings.get("active_profile")
+    if not hermes_cli.available():
+        raise HTTPException(status_code=503, detail="Hermes CLI is not available.")
+    try:
+        return {**hermes_cli.inspect_skill(prof, identifier), "profile": prof}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.post("/marketplace/install")
+async def install_marketplace_skill(body: InstallSkill, profile: str | None = Query(default=None)) -> dict:
+    settings = get_store().read("settings") or {}
+    prof = profile or settings.get("active_profile")
+    if not hermes_cli.available():
+        raise HTTPException(status_code=503, detail="Hermes CLI is not available.")
+    identifier = body.identifier.strip()
+    if not identifier:
+        raise HTTPException(status_code=400, detail="Skill identifier is required.")
+    try:
+        return {**hermes_cli.install_skill(prof, identifier), "profile": prof}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.post("/marketplace/taps")
+async def add_marketplace_tap(body: AddTap, profile: str | None = Query(default=None)) -> dict:
+    settings = get_store().read("settings") or {}
+    prof = profile or settings.get("active_profile")
+    if not hermes_cli.available():
+        raise HTTPException(status_code=503, detail="Hermes CLI is not available.")
+    repo = body.repo.strip()
+    if not repo or "/" not in repo or repo.startswith("/") or repo.endswith("/"):
+        raise HTTPException(status_code=400, detail="Enter a GitHub repo as owner/repo.")
+    try:
+        return {**hermes_cli.add_skill_tap(prof, repo), "profile": prof}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @router.post("")
@@ -70,7 +159,7 @@ async def create(body: CreateSkill) -> dict:
             "runs": 0,
             "last_run": None,
             "created_at": int(time.time()),
-            "source": "local",
+            "source": "app-local",
         }
         d["skills"].insert(0, skill)
         return skill

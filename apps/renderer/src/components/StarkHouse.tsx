@@ -219,8 +219,8 @@ export function StarkHouse({
       <div
         className="absolute z-20"
         style={{
-          left: `calc(${def.x}% - 64px)`,
-          bottom: `calc(${def.y}% + 64px)`,
+          left: `clamp(72px, calc(${def.x}% - 64px), calc(100% - 140px))`,
+          bottom: `clamp(42px, calc(${def.y}% + 64px), calc(100% - 168px))`,
           transition:
             'left 1.4s cubic-bezier(.4,0,.2,1), bottom 1.4s cubic-bezier(.4,0,.2,1)',
         }}
@@ -251,7 +251,7 @@ export function StarkHouse({
       </div>
 
       {/* ───── Top-right HUD ───── */}
-      <div className="absolute right-4 top-4 z-30 flex flex-col items-end gap-1.5">
+      <div className="absolute right-4 top-4 z-30 flex max-w-[min(42vw,260px)] flex-col items-end gap-1.5">
         {pills.map((p, i) => (
           <Pill key={i} tone={p.tone} label={p.label} />
         ))}
@@ -259,11 +259,11 @@ export function StarkHouse({
 
       {/* ───── Top-left brand ───── */}
       <div
-        className="font-mono absolute left-4 top-4 z-30 inline-flex items-center gap-2 rounded-[3px] border-2 border-[#1C2340] bg-[#F4EEDF] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#1C2340]"
+        className="font-mono absolute left-4 top-4 z-30 inline-flex max-w-[min(46vw,240px)] items-center gap-2 truncate rounded-[3px] border-2 border-[#1C2340] bg-[#F4EEDF] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#1C2340]"
         style={{ boxShadow: '3px 3px 0 #1C2340' }}
       >
         <span className="inline-block h-2 w-2 bg-[#F5A524] outline outline-1 outline-[#1C2340]" />
-        stark · the mansion
+        <span className="truncate">stark · the mansion</span>
       </div>
     </div>
   );
@@ -354,6 +354,7 @@ function House() {
       {/* floor dividers */}
       <div className="absolute" aria-hidden style={{ left: '6%', right: '6%', top: '37%', height: 3, background: '#1C2340' }} />
       <div className="absolute" aria-hidden style={{ left: '6%', right: '6%', top: '60%', height: 3, background: '#1C2340' }} />
+      <div className="absolute" aria-hidden style={{ left: '6%', right: '6%', bottom: '12%', height: 8, background: '#C28a55', boxShadow: 'inset 0 2px 0 #F4EEDF, inset 0 -2px 0 #1C2340' }} />
 
       {/* room dividers — interior walls (slim) */}
       <Wall left="35%" topPct={14} bottomPct={37} />
@@ -374,6 +375,7 @@ function House() {
       {/* ─── GROUND FLOOR ─── */}
       <LivingRoom left="6%" right="65%" />
       <BookshelfWall left="65%" right="94%" />
+      <FrontSteps />
     </>
   );
 }
@@ -715,6 +717,39 @@ function BookshelfWall({ left, right }: { left: string; right: string }) {
   );
 }
 
+function FrontSteps() {
+  return (
+    <>
+      <Pixel
+        className="absolute"
+        style={{ left: '46%', bottom: '12%', width: 82, height: 76 }}
+        layers={[
+          { x: 12, y: 0, w: 58, h: 58, fill: '#7a4f25', stroke: '#1C2340' },
+          { x: 18, y: 8, w: 46, h: 50, fill: '#1C2340' },
+          { x: 22, y: 12, w: 17, h: 42, fill: '#F4EEDF' },
+          { x: 43, y: 12, w: 17, h: 42, fill: '#F4EEDF' },
+          { x: 39, y: 34, w: 4, h: 4, fill: '#F5A524' },
+          { x: 0, y: 58, w: 82, h: 8, fill: '#C28a55', stroke: '#1C2340' },
+          { x: 8, y: 66, w: 66, h: 8, fill: '#B87F4B', stroke: '#1C2340' },
+        ]}
+      />
+      <span
+        aria-hidden
+        className="absolute"
+        style={{
+          left: 'calc(46% + 37px)',
+          bottom: 'calc(12% + 44px)',
+          width: 8,
+          height: 8,
+          background: '#FFD277',
+          boxShadow: '0 0 18px rgba(255,210,119,0.8)',
+          animation: 'stark-pulse 2.6s ease-in-out infinite',
+        }}
+      />
+    </>
+  );
+}
+
 /* ─── Garden ─── */
 
 function Garden({ approvalsPending }: { approvalsPending: boolean }) {
@@ -959,7 +994,7 @@ function SpeechBubble({ children }: { children: React.ReactNode }) {
   if (!children) return null;
   return (
     <div
-      className="font-mono pointer-events-none absolute -top-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-[4px] border-2 border-[#1C2340] bg-[#FBF7EC] px-2 py-1 text-[10px] font-bold text-[#1C2340]"
+      className="font-mono pointer-events-none absolute -top-10 left-1/2 z-10 max-w-[168px] -translate-x-1/2 rounded-[4px] border-2 border-[#1C2340] bg-[#FBF7EC] px-2 py-1 text-center text-[10px] font-bold leading-tight text-[#1C2340]"
       style={{ boxShadow: '3px 3px 0 #1C2340', transform: 'translate(-50%, 0) rotate(-1deg)' }}
     >
       {children}
@@ -987,11 +1022,11 @@ function Pill({ tone, label }: { tone: 'navy' | 'amber' | 'mint' | 'rose'; label
   }[tone];
   return (
     <span
-      className="font-mono inline-flex items-center gap-1.5 rounded-[3px] border-2 border-[#1C2340] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em]"
+      className="font-mono inline-flex max-w-full items-center gap-1.5 rounded-[3px] border-2 border-[#1C2340] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em]"
       style={{ background: palette.bg, color: palette.fg, boxShadow: '3px 3px 0 #1C2340' }}
     >
-      <span className="inline-block h-2 w-2 rounded-full" style={{ background: palette.fg }} />
-      {label}
+      <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: palette.fg }} />
+      <span className="truncate">{label}</span>
     </span>
   );
 }

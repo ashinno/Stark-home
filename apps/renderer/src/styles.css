@@ -242,6 +242,19 @@ textarea:focus-visible {
     opacity: 0;
   }
 }
+@keyframes stark-ember-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6);
+  }
+  18% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-28px) scale(1.7);
+  }
+}
 @keyframes stark-typing {
   0%,
   60%,

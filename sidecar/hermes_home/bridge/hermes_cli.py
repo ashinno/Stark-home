@@ -33,9 +33,13 @@ def available() -> bool:
 
 
 def _run(args: list[str], timeout: float = 12.0) -> str:
+    return _run_result(args, timeout=timeout)[1]
+
+
+def _run_result(args: list[str], timeout: float = 12.0) -> tuple[int, str]:
     bin_ = cli_path()
     if not bin_:
-        return ""
+        return 127, ""
     try:
         out = subprocess.run(
             [bin_, *args],
@@ -45,9 +49,10 @@ def _run(args: list[str], timeout: float = 12.0) -> str:
             check=False,
             env={"NO_COLOR": "1", "TERM": "dumb", **os.environ},
         )
-        return _ANSI.sub("", (out.stdout or "") + (("\n" + out.stderr) if out.stderr else ""))
-    except Exception:
-        return ""
+        text = _ANSI.sub("", (out.stdout or "") + (("\n" + out.stderr) if out.stderr else ""))
+        return out.returncode, text
+    except Exception as exc:
+        return 1, str(exc)
 
 
 # ─── helpers ────────────────────────────────────────────────────
@@ -67,6 +72,44 @@ def _split_table_lines(text: str) -> Iterator[str]:
         if all(ch in " ━─═┃┏┗┓┛┳┻┣┫╋│┌┐└┘┬┴├┤┼-=" for ch in line):
             continue
         yield line
+
+
+def _table_cells(line: str) -> list[str] | None:
+    if "│" not in line and "┃" not in line:
+        return None
+    normalized = line.replace("┃", "│").strip()
+    cells = [c.strip() for c in normalized.strip("│").split("│")]
+    if not cells or all(not c for c in cells):
+        return None
+    if any(set(c.replace(" ", "")) <= set("━─═┳┻╋┬┴┼-= ") and c for c in cells):
+        return None
+    return cells
+
+
+def _skill_id(*parts: str) -> str:
+    raw = "_".join(p for p in parts if p).lower()
+    slug = re.sub(r"[^a-z0-9]+", "_", raw).strip("_")
+    return f"skl_{slug[:56] or 'skill'}"
+
+
+def _join_wrapped(a: str, b: str) -> str:
+    if not b:
+        return a
+    if not a:
+        return b
+    if a.endswith("...") or a.endswith("…"):
+        return a
+    return f"{a} {b}"
+
+
+def _profile_args(profile: str | None) -> list[str]:
+    if profile and profile != "default":
+        return ["-p", profile]
+    return []
+
+
+def _normalize_trust(trust: str) -> str:
+    return trust.replace("★", "").strip()
 
 
 def _ts_from_session_id(sid: str) -> int | None:
@@ -187,10 +230,7 @@ def read_session(profile: str | None, sid: str) -> dict[str, Any] | None:
 
 def list_skills(profile: str | None) -> list[dict[str, Any]]:
     """Parse `hermes skills list` (Rich box table)."""
-    args: list[str] = []
-    if profile and profile != "default":
-        args += ["-p", profile]
-    args += ["skills", "list"]
+    args = [*_profile_args(profile), "skills", "list"]
     text = _run(args)
     if not text:
         return []
@@ -206,30 +246,235 @@ def list_skills(profile: str | None) -> list[dict[str, Any]]:
             if "Name" in line and ("Trust" in line or "Source" in line):
                 header_seen = True
             continue
-        if "│" not in line and "┃" not in line:
+        cols = _table_cells(line)
+        if not cols or len(cols) < 4:
             continue
-        # Replace heavy with light, then split.
-        normalized = line.replace("┃", "│")
-        cols = [c.strip() for c in normalized.strip().strip("│").split("│")]
-        if len(cols) < 4:
-            continue
-        name, category, source, trust = cols[0], cols[1], cols[2], cols[3]
+        name, category, source, trust = (cols + ["", "", "", ""])[:4]
         if not name or name.startswith("━"):
             continue
-        # truncated names end with "…" — keep them as-is
-        rows.append({
-            "id": f"skl_{re.sub(r'[^a-z0-9]', '_', name.lower())[:32]}",
-            "name": name,
-            "category": category,
-            "source": source,
-            "trust": trust,
-            "enabled": True,
-            "trigger": category or "on demand",
-            "steps": [],
-            "runs": 0,
-            "last_run": None,
-        })
+        if not category and not source and not trust and rows:
+            rows[-1]["name"] = _join_wrapped(rows[-1]["name"], name)
+            rows[-1]["id"] = _skill_id(rows[-1].get("source", ""), rows[-1]["name"])
+            continue
+        if not source and not trust:
+            continue
+        rows.append(
+            {
+                "id": _skill_id(source, name),
+                "identifier": name,
+                "name": name,
+                "description": "",
+                "category": category,
+                "source": source or "hermes",
+                "trust": _normalize_trust(trust),
+                "installed": True,
+                "enabled": True,
+                "trigger": category or "on demand",
+                "steps": [],
+                "runs": 0,
+                "last_run": None,
+            }
+        )
     return rows
+
+
+def _parse_market_table(text: str, *, mode: str) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    header_seen = False
+    current: dict[str, Any] | None = None
+
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        if not header_seen:
+            if "Description" in line and "Source" in line and "Trust" in line:
+                header_seen = True
+            continue
+        cols = _table_cells(line)
+        if not cols:
+            continue
+
+        if mode == "browse":
+            cols = (cols + ["", "", "", "", ""])[:5]
+            index, name, description, source, trust = cols
+            is_new = index.isdigit() and bool(name)
+            identifier = name
+        else:
+            cols = (cols + ["", "", "", "", ""])[:5]
+            name, description, source, trust, identifier = cols
+            is_new = bool(name)
+            identifier = identifier or name
+            if "…" in identifier or "..." in identifier:
+                identifier = name
+
+        if is_new:
+            current = {
+                "id": _skill_id("marketplace", identifier or name),
+                "identifier": identifier or name,
+                "name": name,
+                "description": description,
+                "category": "",
+                "source": source,
+                "trust": _normalize_trust(trust),
+                "installed": False,
+                "enabled": True,
+                "trigger": "on demand",
+                "steps": [],
+                "runs": 0,
+                "last_run": None,
+            }
+            rows.append(current)
+            continue
+
+        if current:
+            # Rich wraps long descriptions and sometimes identifiers onto
+            # continuation rows. Preserve useful text and ignore decorative gaps.
+            current["description"] = _join_wrapped(current.get("description", ""), description)
+            if mode == "search" and identifier and not current["identifier"].endswith("…"):
+                current["identifier"] = _join_wrapped(current["identifier"], identifier)
+                current["id"] = _skill_id("marketplace", current["identifier"])
+    return rows
+
+
+def _installed_names(profile: str | None) -> set[str]:
+    names: set[str] = set()
+    for skill in list_skills(profile):
+        name = (skill.get("name") or "").strip().lower()
+        identifier = (skill.get("identifier") or "").strip().lower()
+        if name:
+            names.add(name)
+        if identifier:
+            names.add(identifier)
+            names.add(identifier.split("/")[-1])
+    return names
+
+
+def _mark_installed(items: list[dict[str, Any]], profile: str | None) -> list[dict[str, Any]]:
+    installed = _installed_names(profile)
+    for item in items:
+        name = (item.get("name") or "").strip().lower()
+        identifier = (item.get("identifier") or "").strip().lower()
+        item["installed"] = bool(
+            name in installed
+            or identifier in installed
+            or (identifier and identifier.split("/")[-1] in installed)
+        )
+    return items
+
+
+def browse_skills(
+    profile: str | None,
+    *,
+    page: int = 1,
+    size: int = 20,
+    source: str = "all",
+) -> dict[str, Any]:
+    args = [
+        *_profile_args(profile),
+        "skills",
+        "browse",
+        "--page",
+        str(max(1, page)),
+        "--size",
+        str(max(1, min(size, 50))),
+        "--source",
+        source,
+    ]
+    text = _run(args, timeout=20.0)
+    items = _mark_installed(_parse_market_table(text, mode="browse"), profile)
+    page_match = re.search(r"page\s+(\d+)\s*/\s*(\d+)", text, re.IGNORECASE)
+    loaded_match = re.search(r"\((\d+)\s+skills?\s+loaded", text, re.IGNORECASE)
+    return {
+        "skills": items,
+        "page": int(page_match.group(1)) if page_match else page,
+        "pages": int(page_match.group(2)) if page_match else page,
+        "total": int(loaded_match.group(1)) if loaded_match else len(items),
+        "source": source,
+    }
+
+
+def search_skills(
+    profile: str | None,
+    query: str,
+    *,
+    limit: int = 20,
+    source: str = "all",
+) -> dict[str, Any]:
+    args = [
+        *_profile_args(profile),
+        "skills",
+        "search",
+        query,
+        "--source",
+        source,
+        "--limit",
+        str(max(1, min(limit, 50))),
+    ]
+    text = _run(args, timeout=20.0)
+    return {
+        "skills": _mark_installed(_parse_market_table(text, mode="search"), profile),
+        "query": query,
+        "source": source,
+    }
+
+
+def inspect_skill(profile: str | None, identifier: str) -> dict[str, Any]:
+    code, text = _run_result([*_profile_args(profile), "skills", "inspect", identifier], timeout=20.0)
+    if code != 0 or not text.strip() or text.strip().startswith("Error:"):
+        raise RuntimeError(text.strip() or "Skill inspect failed.")
+    meta: dict[str, str] = {}
+    preview_lines: list[str] = []
+    in_preview = False
+    last_meta: str | None = None
+    for raw in text.splitlines():
+        line = raw.strip()
+        if "SKILL.md Preview" in line:
+            in_preview = True
+            continue
+        content = line.strip("│╭╮╰╯─ ").rstrip()
+        if not content:
+            continue
+        if in_preview:
+            if "hermes skills install" in content:
+                continue
+            preview_lines.append(content)
+            continue
+        m = re.match(r"(Name|Description|Source|Trust|Identifier|Tags):\s*(.*)", content)
+        if m:
+            last_meta = m.group(1).lower()
+            meta[last_meta] = _join_wrapped(meta.get(last_meta, ""), m.group(2).strip())
+        elif last_meta in {"description", "tags"}:
+            meta[last_meta] = _join_wrapped(meta.get(last_meta, ""), content)
+    skill = {
+        "id": _skill_id("marketplace", meta.get("identifier", identifier)),
+        "identifier": meta.get("identifier", identifier),
+        "name": meta.get("name", identifier),
+        "description": meta.get("description", ""),
+        "category": "",
+        "source": meta.get("source", ""),
+        "trust": _normalize_trust(meta.get("trust", "")),
+        "installed": False,
+        "enabled": True,
+        "trigger": "on demand",
+        "steps": [],
+        "runs": 0,
+        "last_run": None,
+    }
+    _mark_installed([skill], profile)
+    return {"skill": skill, "preview": "\n".join(preview_lines[:120])}
+
+
+def install_skill(profile: str | None, identifier: str) -> dict[str, Any]:
+    code, text = _run_result([*_profile_args(profile), "skills", "install", "--yes", identifier], timeout=120.0)
+    if code != 0 or "Error:" in text:
+        raise RuntimeError(text.strip() or "Skill install failed.")
+    return {"identifier": identifier, "output": text.strip()}
+
+
+def add_skill_tap(profile: str | None, repo: str) -> dict[str, Any]:
+    code, text = _run_result([*_profile_args(profile), "skills", "tap", "add", repo], timeout=60.0)
+    if code != 0 or "Error:" in text:
+        raise RuntimeError(text.strip() or "Skill source import failed.")
+    return {"repo": repo, "output": text.strip()}
 
 
 # ─── cron ──────────────────────────────────────────────────────
