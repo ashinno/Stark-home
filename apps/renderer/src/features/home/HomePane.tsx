@@ -75,15 +75,8 @@ export function HomePane() {
 
   return (
     <div className="stark-bg flex h-full flex-col">
-      {/* Stark's House */}
-      <section className="px-8 pt-6">
-        <div className="mx-auto max-w-6xl">
-          <StarkHouse className="h-[440px] rounded-[var(--radius-xl)] border-2 border-[#1C2340] shadow-[6px_6px_0_#1C2340]" />
-        </div>
-      </section>
-
       {/* Hero prompt */}
-      <section className="relative px-8 pb-6 pt-6">
+      <section className="relative px-8 pb-6 pt-10">
         <div className="mx-auto max-w-4xl">
           <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--primary)]">
             Control center
