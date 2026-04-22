@@ -9,8 +9,13 @@ import {
   MessagesSquare,
   Maximize2,
   Minimize2,
+  Wrench,
+  CalendarClock,
+  Library,
+  Radio,
+  Settings as Cog,
 } from 'lucide-react';
-import { useSession } from '../../stores/session';
+import { useSession, type Route } from '../../stores/session';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge, Dot, EmptyState, SectionHeading, ProgressBar } from '../../components/ui/Atoms';
@@ -167,11 +172,14 @@ export function HomePane() {
 
       {/* Grid */}
       <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
-        <div className="mx-auto grid max-w-6xl gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          <Approvals data={approvals} onReview={() => setRoute('threads')} />
-          <RunningJobs data={jobs} />
-          <Recents data={threads} onOpen={() => setRoute('threads')} />
-          <Suggestions data={suggestions} onRun={send} />
+        <div className="mx-auto max-w-6xl">
+          <FeatureDock onGo={(r) => setRoute(r)} />
+          <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            <Approvals data={approvals} onReview={() => setRoute('threads')} />
+            <RunningJobs data={jobs} />
+            <Recents data={threads} onOpen={() => setRoute('threads')} />
+            <Suggestions data={suggestions} onRun={send} />
+          </div>
         </div>
       </div>
     </div>
@@ -320,6 +328,58 @@ function Recents({ data, onOpen }: { data: Thread[]; onOpen: () => void }) {
         </ul>
       )}
     </CardShell>
+  );
+}
+
+type DockItem = {
+  id: Route;
+  label: string;
+  icon: typeof MessagesSquare;
+  blurb: string;
+  hotkey: string;
+};
+
+const DOCK_ITEMS: DockItem[] = [
+  { id: 'threads', label: 'Threads', icon: MessagesSquare, blurb: 'Chat with Hermes', hotkey: '2' },
+  { id: 'tools', label: 'Tools', icon: Wrench, blurb: 'Toggle capabilities', hotkey: '3' },
+  { id: 'skills', label: 'Skills', icon: Sparkles, blurb: 'Hub + marketplace', hotkey: '4' },
+  { id: 'automations', label: 'Automations', icon: CalendarClock, blurb: 'Schedules & jobs', hotkey: '5' },
+  { id: 'memory', label: 'Memory', icon: Library, blurb: 'Notes & sessions', hotkey: '6' },
+  { id: 'gateways', label: 'Gateways', icon: Radio, blurb: 'Slack, Telegram, email', hotkey: '7' },
+  { id: 'activity', label: 'Activity', icon: Activity, blurb: 'Live timeline', hotkey: '8' },
+  { id: 'settings', label: 'Settings', icon: Cog, blurb: 'Doctor, providers, MCP', hotkey: ',' },
+];
+
+function FeatureDock({ onGo }: { onGo: (r: Route) => void }) {
+  return (
+    <div>
+      <SectionHeading
+        eyebrow="Hermes at a glance"
+        title="Every power, one click away"
+        description="Jump to any subsystem Hermes can run for you."
+      />
+      <div className="stagger mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-8">
+        {DOCK_ITEMS.map(({ id, label, icon: Icon, blurb, hotkey }) => (
+          <button
+            key={id}
+            onClick={() => onGo(id)}
+            className="group flex flex-col items-start gap-2 rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--surface)] p-3 text-left transition-all hover:-translate-y-0.5 hover:border-[var(--primary)]/50 hover:bg-[var(--surface-2)] hover:shadow-[var(--shadow-md)]"
+            title={`${label} · ⌘${hotkey}`}
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-xs)] bg-[var(--primary-wash)] text-[var(--primary)] transition-colors group-hover:bg-[var(--primary)] group-hover:text-[var(--primary-ink)]">
+              <Icon className="h-3.5 w-3.5" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[13px] font-medium text-[var(--fg)]">{label}</span>
+                <Kbd>⌘{hotkey}</Kbd>
+              </div>
+              <div className="mt-0.5 truncate text-[11px] text-[var(--fg-muted)]">{blurb}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
