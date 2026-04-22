@@ -7,8 +7,6 @@ import {
   Sparkles,
   Pause,
   MessagesSquare,
-  Maximize2,
-  Minimize2,
   Wrench,
   CalendarClock,
   Library,
@@ -33,7 +31,6 @@ export function HomePane() {
   const resetThread = useSession((s) => s.resetThread);
   const setRoute = useSession((s) => s.setRoute);
   const homeMode = useSession((s) => s.homeMode);
-  const toggleHomeMode = useSession((s) => s.toggleHomeMode);
   const [draft, setDraft] = useState('');
 
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -71,15 +68,6 @@ export function HomePane() {
     return (
       <div className="relative h-full">
         <StarkHouse fullscreen />
-        {/* Mode toggle pill — sits above the house in the top-right */}
-        <button
-          onClick={toggleHomeMode}
-          className="font-mono absolute right-4 top-4 z-30 inline-flex items-center gap-2 rounded-[var(--radius-sm)] border-2 border-[#1C2340] bg-[#F4EEDF] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#1C2340] shadow-[4px_4px_0_#1C2340] transition-transform hover:translate-x-[-1px] hover:translate-y-[-1px]"
-          title="Switch back to compact view"
-        >
-          <Minimize2 className="h-3 w-3" /> Exit home mode
-        </button>
-        {/* Floating chat dock */}
         <HomeDock />
       </div>
     );
@@ -90,16 +78,7 @@ export function HomePane() {
       {/* Stark's House */}
       <section className="px-8 pt-6">
         <div className="mx-auto max-w-6xl">
-          <div className="relative">
-            <StarkHouse className="h-[440px] rounded-[var(--radius-xl)] border-2 border-[#1C2340] shadow-[6px_6px_0_#1C2340]" />
-            <button
-              onClick={toggleHomeMode}
-              className="font-mono absolute right-4 top-4 z-30 inline-flex items-center gap-2 rounded-[var(--radius-sm)] border-2 border-[#1C2340] bg-[#F4EEDF] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#1C2340] shadow-[3px_3px_0_#1C2340] transition-transform hover:translate-x-[-1px] hover:translate-y-[-1px]"
-              title="Open Home Mode \u2014 fullscreen house with floating chat"
-            >
-              <Maximize2 className="h-3 w-3" /> Home mode
-            </button>
-          </div>
+          <StarkHouse className="h-[440px] rounded-[var(--radius-xl)] border-2 border-[#1C2340] shadow-[6px_6px_0_#1C2340]" />
         </div>
       </section>
 

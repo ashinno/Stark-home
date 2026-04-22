@@ -51,24 +51,39 @@ export function TitleBar() {
       <div className="no-drag flex items-center gap-4">
         <button
           onClick={onToggleHomeMode}
-          title={homeMode ? 'Exit Home mode (fullscreen house)' : 'Enter Home mode (fullscreen house + floating chat)'}
-          aria-pressed={homeMode}
-          className={cn(
-            'font-mono flex items-center gap-1.5 rounded-[var(--radius-sm)] border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] transition-colors',
-            homeMode
-              ? 'border-[var(--primary)] bg-[var(--primary-wash)] text-[var(--primary)] shadow-[0_0_0_1px_var(--primary-glow)]'
-              : 'border-[var(--line)] bg-[var(--surface-2)]/60 text-[var(--fg-muted)] hover:border-[var(--line-strong)] hover:text-[var(--fg)]',
-          )}
+          role="switch"
+          aria-checked={homeMode}
+          aria-label="Home mode"
+          title={homeMode ? 'Home mode is on — switch off to return to the compact view' : 'Home mode is off — switch on for the fullscreen house + floating chat'}
+          className="font-mono no-drag group flex items-center gap-2 rounded-[var(--radius-sm)] border border-transparent px-1.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] transition-colors hover:border-[var(--line)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
         >
-          <Home className="h-3 w-3" />
-          home mode
+          <Home
+            className={cn(
+              'h-3 w-3 transition-colors',
+              homeMode ? 'text-[var(--primary)]' : 'text-[var(--fg-dim)] group-hover:text-[var(--fg-muted)]',
+            )}
+          />
+          <span className={cn('transition-colors', homeMode ? 'text-[var(--fg)]' : 'text-[var(--fg-muted)]')}>
+            home mode
+          </span>
           <span
             aria-hidden
             className={cn(
-              'ml-0.5 inline-block h-1.5 w-1.5 rounded-full',
-              homeMode ? 'bg-[var(--primary)]' : 'bg-[var(--fg-ghost)]',
+              'relative inline-block h-4 w-8 shrink-0 rounded-full transition-colors duration-200',
+              homeMode
+                ? 'bg-[var(--primary)] shadow-[0_0_12px_-2px_var(--primary-glow)]'
+                : 'bg-[var(--surface-3)]',
             )}
-          />
+          >
+            <span
+              className={cn(
+                'absolute top-0.5 h-3 w-3 rounded-full shadow-sm transition-transform duration-200 ease-out',
+                homeMode
+                  ? 'translate-x-[18px] bg-[var(--primary-ink)]'
+                  : 'translate-x-0.5 bg-white',
+              )}
+            />
+          </span>
         </button>
         <ProfilePicker />
         <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--fg-muted)]">
