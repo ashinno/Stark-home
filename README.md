@@ -2,6 +2,18 @@
 
 A precise native desktop companion for the [Nous Research hermes-agent](https://github.com/NousResearch/hermes-agent).
 
+## Install
+
+```bash
+brew tap ashinno/stark
+brew install --cask ashinno/stark/stark
+```
+
+> The Homebrew tap serves a signed + notarized universal DMG straight from
+> this repo's GitHub Releases. See [HOMEBREW.md](HOMEBREW.md) for the full
+> publish workflow used by maintainers to cut new versions.
+
+
 - **One installer.** No Python, no `pip`, no `curl | bash`. Ships a vendored Python runtime + pinned hermes-agent fork inside the `.app`.
 - **ChatGPT sign-in as a first-class provider.** Reuses the local [OpenAI Codex CLI](https://github.com/openai/codex) so your ChatGPT Plus/Pro subscription is enough — no API key.
 - **Every provider Hermes speaks.** Codex (ChatGPT), OpenAI, Anthropic, OpenRouter, Nous Portal, NVIDIA NIM, Moonshot, MiniMax, Hugging Face, local Ollama, any OpenAI-compatible endpoint.
