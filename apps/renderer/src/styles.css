@@ -255,6 +255,22 @@ textarea:focus-visible {
     transform: translateY(-28px) scale(1.7);
   }
 }
+@keyframes stark-drift {
+  from {
+    transform: translateX(-8px);
+  }
+  to {
+    transform: translateX(12px);
+  }
+}
+@keyframes stark-sway {
+  from {
+    transform: rotate(-1deg);
+  }
+  to {
+    transform: rotate(1.5deg);
+  }
+}
 @keyframes stark-typing {
   0%,
   60%,

@@ -23,7 +23,7 @@ export function TitleBar() {
           : 'sleeping';
 
   return (
-    <header className="drag flex h-12 shrink-0 items-center justify-between border-b border-[var(--line)] bg-[var(--bg-raised)]/80 px-4 backdrop-blur">
+    <header className="drag relative z-[80] flex h-12 shrink-0 items-center justify-between border-b border-[var(--line)] bg-[var(--bg-raised)]/90 px-4 backdrop-blur">
       <div className="flex items-center gap-4 pl-16">
         <Wordmark size={18} />
         <span className="hidden h-4 w-px bg-[var(--line)] sm:block" />
