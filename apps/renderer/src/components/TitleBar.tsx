@@ -41,7 +41,10 @@ export function TitleBar() {
           className={cn(
             'no-drag group flex items-center gap-3 rounded-[var(--radius-sm)]',
             'border border-[var(--line)] bg-[var(--surface-2)]/60 hover:border-[var(--line-strong)] hover:bg-[var(--surface-2)]',
-            'px-3 py-1 text-[12px] text-[var(--fg-muted)] transition-colors',
+            'px-3 py-1 text-[12px] text-[var(--fg-muted)]',
+            'transition-[background-color,border-color,color] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
+            'hover:text-[var(--fg)]',
+            'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
           )}
         >
           <span className="opacity-80">What should Hermes do?</span>
@@ -69,7 +72,8 @@ export function TitleBar() {
           <span
             aria-hidden
             className={cn(
-              'relative inline-block h-4 w-8 shrink-0 rounded-full transition-colors duration-200',
+              'relative inline-block h-4 w-8 shrink-0 rounded-full',
+              'transition-[background-color,box-shadow] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
               homeMode
                 ? 'bg-[var(--primary)] shadow-[0_0_12px_-2px_var(--primary-glow)]'
                 : 'bg-[var(--surface-3)]',
@@ -77,7 +81,8 @@ export function TitleBar() {
           >
             <span
               className={cn(
-                'absolute top-0.5 h-3 w-3 rounded-full shadow-sm transition-transform duration-200 ease-out',
+                'absolute top-0.5 h-3 w-3 rounded-full shadow-sm',
+                'transition-[transform,background-color] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-spring)]',
                 homeMode
                   ? 'translate-x-[18px] bg-[var(--primary-ink)]'
                   : 'translate-x-0.5 bg-white',
@@ -102,8 +107,12 @@ export function TitleBar() {
               key={v}
               onClick={() => setTheme(v)}
               title={label}
+              aria-label={`${label} theme`}
+              aria-pressed={theme === v}
               className={cn(
-                'flex h-6 w-6 items-center justify-center rounded-full transition-colors',
+                'flex h-6 w-6 items-center justify-center rounded-full',
+                'transition-[background-color,color,box-shadow] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
+                'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
                 theme === v
                   ? 'bg-[var(--surface)] text-[var(--fg)] shadow-[var(--shadow-sm)]'
                   : 'text-[var(--fg-dim)] hover:text-[var(--fg)]',

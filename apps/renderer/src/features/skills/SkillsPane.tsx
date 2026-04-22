@@ -5,10 +5,11 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Dialog } from '../../components/ui/Dialog';
 import { Field, Input, Textarea } from '../../components/ui/Input';
+import { TabStrip, type Tab as TabDef } from '../../components/ui/TabStrip';
+import { SkeletonCard } from '../../components/ui/Skeleton';
 import { useToast } from '../../components/ui/Toast';
 import { call } from '../../lib/rpc';
 import { relTime } from '../../lib/time';
-import { cn } from '../../lib/cn';
 import type { SidecarResponse } from '@shared/rpc';
 
 type Skill = {
@@ -40,6 +41,11 @@ type InspectResponse = {
 };
 
 const MARKET_SOURCES = ['all', 'official', 'skills-sh', 'well-known', 'github', 'clawhub', 'lobehub'] as const;
+
+const SKILLS_TABS: readonly TabDef<'installed' | 'marketplace'>[] = [
+  { id: 'installed', label: 'Installed' },
+  { id: 'marketplace', label: 'Marketplace' },
+];
 
 function responseError(r: SidecarResponse): string {
   const detail = typeof r.data === 'object' && r.data && 'detail' in r.data ? String((r.data as { detail: unknown }).detail) : '';
@@ -179,23 +185,11 @@ export function SkillsPane() {
         </div>
       </div>
       <div className="border-b border-[var(--line)] px-8">
-        <div className="flex gap-1">
-          {(['installed', 'marketplace'] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={cn(
-                'relative px-4 py-3 text-sm capitalize transition-colors',
-                tab === t ? 'text-[var(--fg)]' : 'text-[var(--fg-muted)] hover:text-[var(--fg)]',
-              )}
-            >
-              {t}
-              {tab === t && (
-                <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary-glow)]" />
-              )}
-            </button>
-          ))}
-        </div>
+        <TabStrip
+          tabs={SKILLS_TABS}
+          active={tab}
+          onSelect={setTab}
+        />
       </div>
       {tab === 'marketplace' && (
         <div className="border-b border-[var(--line)] px-8 py-4">
@@ -246,17 +240,19 @@ export function SkillsPane() {
             />
           ) : (
             <div className="stagger mx-auto grid max-w-5xl grid-cols-1 gap-3 lg:grid-cols-2">
-              {installed.map((s) => (
-                <InstalledSkillCard key={s.id} skill={s} onToggle={toggle} onRun={run} onRemove={remove} />
+              {installed.map((s, i) => (
+                <div key={s.id} style={{ '--i': Math.min(i, 12) } as React.CSSProperties}>
+                  <InstalledSkillCard skill={s} onToggle={toggle} onRun={run} onRemove={remove} />
+                </div>
               ))}
             </div>
           )
         ) : marketLoading ? (
-          <EmptyState
-            icon={<RefreshCw className="h-5 w-5 animate-[stark-spin_0.8s_linear_infinite]" />}
-            title="Loading marketplace"
-            description="Fetching skills from the Hermes Skills Hub."
-          />
+          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-3 lg:grid-cols-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
         ) : marketSkills.length === 0 ? (
           <EmptyState
             icon={<Sparkles className="h-5 w-5" />}
@@ -281,15 +277,16 @@ export function SkillsPane() {
               </div>
             </div>
             <div className="stagger grid grid-cols-1 gap-3 lg:grid-cols-2">
-              {marketSkills.map((s) => (
-                <MarketplaceSkillCard
-                  key={`${s.source}-${s.identifier || s.name}`}
-                  skill={s}
-                  inspecting={inspecting === (s.identifier || s.name)}
-                  installing={installing === (s.identifier || s.name)}
-                  onInspect={inspect}
-                  onInstall={install}
-                />
+              {marketSkills.map((s, i) => (
+                <div key={`${s.source}-${s.identifier || s.name}`} style={{ '--i': Math.min(i, 12) } as React.CSSProperties}>
+                  <MarketplaceSkillCard
+                    skill={s}
+                    inspecting={inspecting === (s.identifier || s.name)}
+                    installing={installing === (s.identifier || s.name)}
+                    onInspect={inspect}
+                    onInstall={install}
+                  />
+                </div>
               ))}
             </div>
           </div>

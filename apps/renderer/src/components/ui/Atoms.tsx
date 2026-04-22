@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '../../lib/cn';
+import { Skeleton } from './Skeleton';
 
 export function Kbd({ children }: { children: ReactNode }) {
   return (
@@ -62,14 +63,26 @@ export function EmptyState({
   description,
   icon,
   action,
+  loading = false,
 }: {
   title: string;
   description: string;
   icon?: ReactNode;
   action?: ReactNode;
+  /** When true, show skeleton placeholders instead of the empty-state message. */
+  loading?: boolean;
 }) {
+  if (loading) {
+    return (
+      <div className="anim-in flex flex-col items-center gap-3 py-16">
+        <Skeleton height="h-11" width="w-11" rounded="rounded-full" />
+        <Skeleton height="h-6" width="w-48" />
+        <Skeleton height="h-3" width="w-80" />
+      </div>
+    );
+  }
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
+    <div className="anim-in flex flex-col items-center justify-center py-16 text-center">
       {icon && (
         <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface-2)] text-[var(--fg-dim)]">
           {icon}

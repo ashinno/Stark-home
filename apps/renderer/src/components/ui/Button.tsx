@@ -15,7 +15,7 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variants: Record<Variant, string> = {
   primary:
-    'bg-[var(--primary)] text-[var(--primary-ink)] hover:bg-[var(--primary-hover)] shadow-[0_1px_0_rgba(255,255,255,0.12)_inset,0_10px_20px_-12px_var(--primary-glow)] active:translate-y-[0.5px]',
+    'bg-[var(--primary)] text-[var(--primary-ink)] hover:bg-[var(--primary-hover)] shadow-[0_1px_0_rgba(255,255,255,0.12)_inset,0_10px_20px_-12px_var(--primary-glow)]',
   secondary:
     'bg-[var(--surface-2)] text-[var(--fg)] border border-[var(--line)] hover:bg-[var(--surface-3)] hover:border-[var(--line-strong)]',
   ghost:
@@ -48,8 +48,10 @@ export function Button({
       {...rest}
       disabled={disabled || loading}
       className={cn(
-        'no-drag inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-150',
-        'disabled:opacity-50 disabled:cursor-not-allowed',
+        'no-drag inline-flex items-center justify-center whitespace-nowrap font-medium',
+        'transition-[background-color,color,border-color,box-shadow,transform] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
+        'active:translate-y-[0.5px] active:scale-[0.985]',
+        'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 disabled:active:translate-y-0',
         'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
         sizes[size],
         variants[variant],

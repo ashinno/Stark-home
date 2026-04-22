@@ -23,6 +23,7 @@ type Task = {
 
 export function AutomationsPane() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [inspecting, setInspecting] = useState<Task | null>(null);
   const push = useToast((s) => s.push);
@@ -30,6 +31,7 @@ export function AutomationsPane() {
   const load = async () => {
     const r = await call<{ tasks: Task[] }>({ method: 'GET', path: '/scheduler' });
     if (r.ok && r.data) setTasks(r.data.tasks);
+    setLoading(false);
   };
   useEffect(() => {
     void load();
@@ -62,7 +64,9 @@ export function AutomationsPane() {
         </Button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
-        {tasks.length === 0 ? (
+        {loading && tasks.length === 0 ? (
+          <EmptyState loading title="Loading" description="" />
+        ) : tasks.length === 0 ? (
           <EmptyState
             icon={<CalendarClock className="h-5 w-5" />}
             title="Nothing scheduled"
@@ -71,8 +75,8 @@ export function AutomationsPane() {
           />
         ) : (
           <div className="stagger mx-auto max-w-4xl space-y-2">
-            {tasks.map((t) => (
-              <Card key={t.id} className="p-5">
+            {tasks.map((t, i) => (
+              <Card key={t.id} className="p-5" style={{ '--i': Math.min(i, 12) } as React.CSSProperties}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">

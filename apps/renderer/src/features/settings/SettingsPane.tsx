@@ -21,6 +21,7 @@ import { SectionHeading, Badge, Dot } from '../../components/ui/Atoms';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Field, Input } from '../../components/ui/Input';
+import { TabStrip, type Tab as TabDef } from '../../components/ui/TabStrip';
 import { useToast } from '../../components/ui/Toast';
 import { useSession } from '../../stores/session';
 import { useTheme } from '../../stores/theme';
@@ -31,6 +32,16 @@ import type { DoctorCheck } from '@shared/rpc';
 import { cn } from '../../lib/cn';
 
 type Tab = 'doctor' | 'profiles' | 'providers' | 'gateways' | 'backends' | 'mcp' | 'account';
+
+const SETTINGS_TABS: readonly TabDef<Tab>[] = [
+  { id: 'doctor', label: 'Hermes Doctor', icon: Stethoscope },
+  { id: 'profiles', label: 'Profiles', icon: Users },
+  { id: 'providers', label: 'Providers', icon: Cpu },
+  { id: 'gateways', label: 'Gateways', icon: Radio },
+  { id: 'backends', label: 'Backends', icon: Server },
+  { id: 'mcp', label: 'MCP', icon: Plug },
+  { id: 'account', label: 'Account & Theme', icon: Palette },
+];
 
 export function SettingsPane() {
   const [tab, setTab] = useState<Tab>('doctor');
@@ -45,38 +56,7 @@ export function SettingsPane() {
         />
       </div>
       <div className="border-b border-[var(--line)] px-8">
-        <div className="flex gap-0.5 overflow-x-auto">
-          {(
-            [
-              { id: 'doctor' as const, label: 'Hermes Doctor', icon: Stethoscope },
-              { id: 'profiles' as const, label: 'Profiles', icon: Users },
-              { id: 'providers' as const, label: 'Providers', icon: Cpu },
-              { id: 'gateways' as const, label: 'Gateways', icon: Radio },
-              { id: 'backends' as const, label: 'Backends', icon: Server },
-              { id: 'mcp' as const, label: 'MCP', icon: Plug },
-              { id: 'account' as const, label: 'Account & Theme', icon: Palette },
-            ]
-          ).map((t) => {
-            const Icon = t.icon;
-            const active = tab === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={cn(
-                  'relative flex items-center gap-2 px-4 py-3 text-sm transition-colors whitespace-nowrap',
-                  active ? 'text-[var(--fg)]' : 'text-[var(--fg-muted)] hover:text-[var(--fg)]',
-                )}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {t.label}
-                {active && (
-                  <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary-glow)]" />
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <TabStrip tabs={SETTINGS_TABS} active={tab} onSelect={setTab} />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
         <div className="mx-auto max-w-4xl">

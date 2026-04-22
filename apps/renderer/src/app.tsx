@@ -4,6 +4,7 @@ import { Sidebar } from './components/Sidebar';
 import { StatusBar } from './components/StatusBar';
 import { CommandPalette } from './components/CommandPalette';
 import { ToastStack } from './components/ui/Toast';
+import { RouteTransition } from './components/ui/RouteTransition';
 import { useSession, type Route } from './stores/session';
 import { useTheme } from './stores/theme';
 import { call } from './lib/rpc';
@@ -143,15 +144,17 @@ export function App() {
       <div className="flex min-h-0 flex-1">
         <Sidebar />
         <main className="min-w-0 flex-1 overflow-hidden">
-          {route === 'home' && <HomePane />}
-          {route === 'threads' && <ThreadsPane />}
-          {route === 'tools' && <ToolsPane />}
-          {route === 'skills' && <SkillsPane />}
-          {route === 'automations' && <AutomationsPane />}
-          {route === 'memory' && <MemoryPane />}
-          {route === 'gateways' && <GatewaysPane />}
-          {route === 'activity' && <ActivityPane />}
-          {route === 'settings' && <SettingsPane />}
+          <RouteTransition routeKey={route}>
+            {route === 'home' && <HomePane />}
+            {route === 'threads' && <ThreadsPane />}
+            {route === 'tools' && <ToolsPane />}
+            {route === 'skills' && <SkillsPane />}
+            {route === 'automations' && <AutomationsPane />}
+            {route === 'memory' && <MemoryPane />}
+            {route === 'gateways' && <GatewaysPane />}
+            {route === 'activity' && <ActivityPane />}
+            {route === 'settings' && <SettingsPane />}
+          </RouteTransition>
         </main>
       </div>
       <StatusBar />

@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from 'react';
 import {
   Home,
   MessagesSquare,
@@ -30,40 +31,71 @@ const items: Item[] = [
 export function Sidebar() {
   const route = useSession((s) => s.route);
   const setRoute = useSession((s) => s.setRoute);
+  const rowRef = useRef<HTMLDivElement>(null);
+  const btnRefs = useRef<Map<Route, HTMLButtonElement>>(new Map());
+  const [indicator, setIndicator] = useState<{ y: number; h: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const row = rowRef.current;
+    const btn = btnRefs.current.get(route);
+    if (!row || !btn) return;
+    const rowRect = row.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    setIndicator({ y: btnRect.top - rowRect.top + btnRect.height / 2 - 10, h: 20 });
+  }, [route]);
 
   return (
     <nav className="flex w-60 shrink-0 flex-col border-r border-[var(--line)] bg-[var(--bg-raised)]/50 p-3">
       <div className="font-mono mb-2 mt-1 px-3 text-[10px] uppercase tracking-[0.22em] text-[var(--fg-ghost)]">
         Control center
       </div>
-      <div className="flex flex-col gap-0.5">
-        {items.map(({ id, label, icon: Icon, hotkey }) => {
+      <div ref={rowRef} className="relative flex flex-col gap-0.5">
+        {indicator && (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute left-0 w-[2px] rounded-r bg-[var(--primary)] shadow-[0_0_10px_var(--primary-glow)]"
+            style={{
+              top: indicator.y,
+              height: indicator.h,
+              transition:
+                'top var(--motion-dur-md) var(--motion-ease-spring), height var(--motion-dur-md) var(--motion-ease-out)',
+            }}
+          />
+        )}
+        {items.map(({ id, label, icon: Icon, hotkey }, i) => {
           const active = route === id;
           return (
             <button
               key={id}
+              ref={(el) => {
+                if (el) btnRefs.current.set(id, el);
+                else btnRefs.current.delete(id);
+              }}
               onClick={() => setRoute(id)}
+              aria-current={active ? 'page' : undefined}
+              style={{ '--i': i } as React.CSSProperties}
               className={cn(
-                'group relative flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-sm transition-all duration-150',
+                'group relative flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-sm',
+                'transition-[background-color,color] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
+                'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
                 active
                   ? 'bg-[var(--primary-wash)] text-[var(--fg)]'
                   : 'text-[var(--fg-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--fg)]',
               )}
             >
-              {active && (
-                <span
-                  aria-hidden
-                  className="absolute left-0 top-1/2 h-5 w-[2px] -translate-y-1/2 rounded-r bg-[var(--primary)] shadow-[0_0_10px_var(--primary-glow)]"
-                />
-              )}
               <Icon
                 className={cn(
-                  'h-4 w-4 transition-colors',
+                  'h-4 w-4 transition-colors duration-[var(--motion-dur-sm)]',
                   active ? 'text-[var(--primary)]' : 'text-[var(--fg-dim)]',
                 )}
               />
               <span className="flex-1 text-left">{label}</span>
-              <span className={cn('opacity-0 transition-opacity', active ? 'opacity-100' : 'group-hover:opacity-100')}>
+              <span
+                className={cn(
+                  'transition-opacity duration-[var(--motion-dur-sm)]',
+                  active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100',
+                )}
+              >
                 <Kbd>⌘{hotkey}</Kbd>
               </span>
             </button>
@@ -74,14 +106,17 @@ export function Sidebar() {
       <div className="mt-auto flex flex-col gap-3">
         <button
           onClick={() => setRoute('settings')}
+          aria-current={route === 'settings' ? 'page' : undefined}
           className={cn(
-            'flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-sm transition-colors',
+            'flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-sm',
+            'transition-[background-color,color] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
+            'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
             route === 'settings'
               ? 'bg-[var(--primary-wash)] text-[var(--fg)]'
               : 'text-[var(--fg-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--fg)]',
           )}
         >
-          <Cog className="h-4 w-4 text-[var(--fg-dim)]" />
+          <Cog className={cn('h-4 w-4 transition-colors duration-[var(--motion-dur-sm)]', route === 'settings' ? 'text-[var(--primary)]' : 'text-[var(--fg-dim)]')} />
           <span className="flex-1 text-left">Settings</span>
           <Kbd>⌘,</Kbd>
         </button>

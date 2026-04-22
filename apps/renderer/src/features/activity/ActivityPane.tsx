@@ -71,8 +71,8 @@ export function ActivityPane() {
               />
             ) : (
               <div className="stagger space-y-2">
-                {jobs.map((j) => (
-                  <Card key={j.id} className="p-4">
+                {jobs.map((j, i) => (
+                  <Card key={j.id} className="p-4" style={{ '--i': Math.min(i, 12) } as React.CSSProperties}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
@@ -109,9 +109,10 @@ export function ActivityPane() {
               />
             ) : (
               <div className="stagger space-y-2">
-                {approvals.map((a) => (
+                {approvals.map((a, i) => (
                   <Card
                     key={a.id}
+                    style={{ '--i': Math.min(i, 12) } as React.CSSProperties}
                     className={cn(
                       'border-l-4 p-4',
                       a.risk === 'high'

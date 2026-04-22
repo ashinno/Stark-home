@@ -10,13 +10,14 @@ export function Card({ className, glow = false, interactive = false, children, .
   return (
     <div
       {...rest}
+      tabIndex={interactive ? 0 : rest.tabIndex}
       className={cn(
         'rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface)]',
         'shadow-[var(--shadow-sm)]',
-        'transition-colors duration-150',
+        'transition-[background-color,border-color,box-shadow,transform] duration-[var(--motion-dur-md)] ease-[var(--motion-ease-out)]',
         glow && 'ring-1 ring-[var(--primary)]/40 shadow-[0_0_30px_-10px_var(--primary-glow)]',
         interactive &&
-          'cursor-pointer hover:border-[var(--line-strong)] hover:bg-[var(--surface-2)]',
+          'cursor-pointer hover:border-[var(--line-strong)] hover:bg-[var(--surface-2)] hover:-translate-y-[1px] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
         className,
       )}
     >

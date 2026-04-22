@@ -18,6 +18,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge, Dot, EmptyState, SectionHeading, ProgressBar } from '../../components/ui/Atoms';
 import { Kbd } from '../../components/ui/Atoms';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { call } from '../../lib/rpc';
 import { relTime } from '../../lib/time';
 import type { Approval, Job, Suggestion, Thread } from '@shared/rpc';
@@ -37,6 +38,7 @@ export function HomePane() {
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [loading, setLoading] = useState(true);
 
   async function load() {
     const [t, a, j, s] = await Promise.all([
@@ -49,6 +51,7 @@ export function HomePane() {
     if (a.ok && a.data) setApprovals(a.data.approvals);
     if (j.ok && j.data) setJobs(j.data.jobs);
     if (s.ok && s.data) setSuggestions(s.data.suggestions);
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -88,7 +91,8 @@ export function HomePane() {
 
           <div
             className={cn(
-              'mt-5 flex items-end gap-2 rounded-[var(--radius-lg)] border bg-[var(--surface)] p-3 transition-colors',
+              'mt-5 flex items-end gap-2 rounded-[var(--radius-lg)] border bg-[var(--surface)] p-3',
+              'transition-[box-shadow,border-color] duration-[var(--motion-dur-md)] ease-[var(--motion-ease-out)]',
               draft
                 ? 'border-[var(--primary)] shadow-[var(--shadow-md)]'
                 : 'border-[var(--line)] shadow-[var(--shadow-sm)]',
@@ -136,10 +140,16 @@ export function HomePane() {
       <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
         <div className="mx-auto max-w-6xl">
           <FeatureDock onGo={(r) => setRoute(r)} />
-          <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-            <Approvals data={approvals} onReview={() => setRoute('threads')} />
-            <RunningJobs data={jobs} />
-            <Recents data={threads} onOpen={() => setRoute('threads')} />
+          <div className="stagger mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            <div style={{ '--i': 0 } as React.CSSProperties}>
+              <Approvals data={approvals} loading={loading} onReview={() => setRoute('threads')} />
+            </div>
+            <div style={{ '--i': 1 } as React.CSSProperties}>
+              <RunningJobs data={jobs} loading={loading} />
+            </div>
+            <div style={{ '--i': 2 } as React.CSSProperties}>
+              <Recents data={threads} loading={loading} onOpen={() => setRoute('threads')} />
+            </div>
             <Suggestions data={suggestions} onRun={send} />
           </div>
         </div>
@@ -148,7 +158,22 @@ export function HomePane() {
   );
 }
 
-// ───────────── section cards (unchanged from prior version)
+function ListSkeleton({ lines }: { lines: number }) {
+  return (
+    <ul className="divide-y divide-[var(--line)]">
+      {Array.from({ length: lines }).map((_, i) => (
+        <li key={i} className="px-5 py-3">
+          <div className="space-y-2">
+            <Skeleton height="h-3" width="w-3/4" />
+            <Skeleton height="h-2.5" width="w-1/2" />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// ───────────── section cards
 
 function CardShell({
   title,
@@ -177,14 +202,16 @@ function CardShell({
   );
 }
 
-function Approvals({ data, onReview }: { data: Approval[]; onReview: () => void }) {
+function Approvals({ data, onReview, loading }: { data: Approval[]; onReview: () => void; loading: boolean }) {
   return (
     <CardShell
       title="Pending approvals"
       icon={<ShieldCheck className="h-3.5 w-3.5" />}
       action={data.length > 0 && <Badge tone="signal">{data.length}</Badge>}
     >
-      {data.length === 0 ? (
+      {loading && data.length === 0 ? (
+        <ListSkeleton lines={3} />
+      ) : data.length === 0 ? (
         <div className="px-5 py-8 text-center text-sm text-[var(--fg-muted)]">
           Clear. Nothing waiting on you.
         </div>
@@ -213,14 +240,16 @@ function Approvals({ data, onReview }: { data: Approval[]; onReview: () => void 
   );
 }
 
-function RunningJobs({ data }: { data: Job[] }) {
+function RunningJobs({ data, loading }: { data: Job[]; loading: boolean }) {
   return (
     <CardShell
       title="Running jobs"
       icon={<Activity className="h-3.5 w-3.5" />}
       action={data.length > 0 ? <Badge tone="primary">{data.length}</Badge> : null}
     >
-      {data.length === 0 ? (
+      {loading && data.length === 0 ? (
+        <ListSkeleton lines={3} />
+      ) : data.length === 0 ? (
         <div className="px-5 py-8 text-center text-sm text-[var(--fg-muted)]">
           Quiet. No jobs in flight.
         </div>
@@ -252,7 +281,7 @@ function RunningJobs({ data }: { data: Job[] }) {
   );
 }
 
-function Recents({ data, onOpen }: { data: Thread[]; onOpen: () => void }) {
+function Recents({ data, onOpen, loading }: { data: Thread[]; onOpen: () => void; loading: boolean }) {
   return (
     <CardShell
       title="Recent threads"
@@ -263,7 +292,9 @@ function Recents({ data, onOpen }: { data: Thread[]; onOpen: () => void }) {
         </button>
       }
     >
-      {data.length === 0 ? (
+      {loading && data.length === 0 ? (
+        <ListSkeleton lines={4} />
+      ) : data.length === 0 ? (
         <EmptyState
           icon={<Clock3 className="h-4 w-4" />}
           title="No sessions yet"
@@ -321,14 +352,20 @@ function FeatureDock({ onGo }: { onGo: (r: Route) => void }) {
         description="Jump to any subsystem Hermes can run for you."
       />
       <div className="stagger mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-8">
-        {DOCK_ITEMS.map(({ id, label, icon: Icon, blurb, hotkey }) => (
+        {DOCK_ITEMS.map(({ id, label, icon: Icon, blurb, hotkey }, i) => (
           <button
             key={id}
             onClick={() => onGo(id)}
-            className="group flex flex-col items-start gap-2 rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--surface)] p-3 text-left transition-all hover:-translate-y-0.5 hover:border-[var(--primary)]/50 hover:bg-[var(--surface-2)] hover:shadow-[var(--shadow-md)]"
+            style={{ '--i': i } as React.CSSProperties}
+            className={cn(
+              'group flex flex-col items-start gap-2 rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--surface)] p-3 text-left',
+              'transition-[background-color,border-color,box-shadow,transform] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
+              'hover:-translate-y-0.5 hover:border-[var(--primary)]/50 hover:bg-[var(--surface-2)] hover:shadow-[var(--shadow-md)]',
+              'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
+            )}
             title={`${label} · ⌘${hotkey}`}
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-xs)] bg-[var(--primary-wash)] text-[var(--primary)] transition-colors group-hover:bg-[var(--primary)] group-hover:text-[var(--primary-ink)]">
+            <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-xs)] bg-[var(--primary-wash)] text-[var(--primary)] transition-colors duration-[var(--motion-dur-sm)] group-hover:bg-[var(--primary)] group-hover:text-[var(--primary-ink)]">
               <Icon className="h-3.5 w-3.5" />
             </div>
             <div className="min-w-0">
@@ -355,8 +392,8 @@ function Suggestions({ data, onRun }: { data: Suggestion[]; onRun: (prompt: stri
         description="Hand-picked based on your setup. Kick any of them off in one click."
       />
       <div className="stagger mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {data.slice(0, 4).map((s) => (
-          <Card key={s.id} interactive className="p-4" onClick={() => onRun(s.prompt)}>
+        {data.slice(0, 4).map((s, i) => (
+          <Card key={s.id} interactive className="p-4" style={{ '--i': i } as React.CSSProperties} onClick={() => onRun(s.prompt)}>
             <div className="flex items-start gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-xs)] bg-[var(--primary-wash)] text-[var(--primary)]">
                 <Sparkles className="h-3.5 w-3.5" />

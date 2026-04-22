@@ -404,7 +404,7 @@ function StudyRoom({ active }: { active: boolean }) {
       <span className="absolute" style={{ left: '22%', top: '52%', width: 4, height: 3, background: C.trim }} />
       <span className="absolute" style={{ left: '28%', top: '52%', width: 4, height: 3, background: C.trim }} />
 
-      {/* floor lamp */}
+      {/* floor lamp — breathes gently */}
       <div className="absolute" style={{ left: '3%', top: '42%', width: 22, height: 22 }}>
         <div
           className="absolute"
@@ -412,6 +412,7 @@ function StudyRoom({ active }: { active: boolean }) {
             left: 2, top: 0, width: 18, height: 12,
             background: 'radial-gradient(ellipse at 50% 40%, #FFE9A7 0%, #E9C774 55%, #8A6B34 100%)',
             boxShadow: `inset 0 0 0 2px ${C.trim}, 0 0 22px rgba(255,225,140,0.45)`,
+            animation: 'stark-pulse 4.2s ease-in-out infinite',
           }}
         />
         <div className="absolute" style={{ left: 9, top: 12, width: 2, height: 8, background: C.trim }} />
@@ -609,11 +610,33 @@ function CoffeeMachine({ left, top }: { left: string; top: string }) {
       {/* carafe */}
       <div className="absolute" style={{ left: 6, top: 14, width: 16, height: 14, background: '#1B1613', boxShadow: `inset 0 0 0 1px ${C.trim}` }} />
       <div className="absolute" style={{ left: 8, top: 16, width: 12, height: 8, background: '#6B4430' }} />
-      {/* steam */}
-      <span className="absolute" style={{ left: 10, top: -6, width: 2, height: 6, background: 'rgba(255,255,255,0.35)' }} />
-      <span className="absolute" style={{ left: 16, top: -4, width: 2, height: 4, background: 'rgba(255,255,255,0.25)' }} />
-      {/* button */}
-      <span className="absolute" style={{ right: 4, top: 6, width: 3, height: 3, background: C.neon, boxShadow: `0 0 6px ${C.neon}` }} />
+      {/* steam — gently rises */}
+      <span
+        className="absolute"
+        style={{
+          left: 10, top: -6, width: 2, height: 6,
+          background: 'rgba(255,255,255,0.35)',
+          animation: 'stark-ember-rise 3.2s ease-out infinite',
+        }}
+      />
+      <span
+        className="absolute"
+        style={{
+          left: 16, top: -4, width: 2, height: 4,
+          background: 'rgba(255,255,255,0.25)',
+          animation: 'stark-ember-rise 3.6s ease-out 0.8s infinite',
+        }}
+      />
+      {/* button — subtle pulse */}
+      <span
+        className="absolute"
+        style={{
+          right: 4, top: 6, width: 3, height: 3,
+          background: C.neon,
+          boxShadow: `0 0 6px ${C.neon}`,
+          animation: 'stark-pulse 2.6s ease-in-out infinite',
+        }}
+      />
     </div>
   );
 }

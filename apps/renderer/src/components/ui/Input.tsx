@@ -5,7 +5,7 @@ const baseField = cn(
   'w-full bg-[var(--bg-raised)] border border-[var(--line)]',
   'rounded-[var(--radius-md)] px-3.5 py-2.5 text-sm',
   'placeholder:text-[var(--fg-ghost)]',
-  'transition-colors duration-150',
+  'transition-[background-color,border-color,box-shadow] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
   'hover:border-[var(--line-strong)]',
   'focus:border-[var(--primary)] focus:bg-[var(--surface)]',
   'focus:[box-shadow:var(--ring-focus)]',
@@ -19,13 +19,15 @@ export function Input({ className, leading, ...rest }: InputProps) {
     return (
       <div
         className={cn(
-          'flex items-center gap-2',
+          'group flex items-center gap-2',
           baseField,
           'focus-within:border-[var(--primary)] focus-within:bg-[var(--surface)] focus-within:[box-shadow:var(--ring-focus)]',
           className,
         )}
       >
-        <span className="text-[var(--fg-dim)]">{leading}</span>
+        <span className="text-[var(--fg-dim)] transition-colors duration-[var(--motion-dur-sm)] group-focus-within:text-[var(--primary)]">
+          {leading}
+        </span>
         <input
           {...rest}
           className="flex-1 bg-transparent outline-none placeholder:text-[var(--fg-ghost)]"

@@ -104,13 +104,14 @@ export function ToolsPane() {
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
         <div className="stagger mx-auto grid max-w-6xl grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {TOOLS.map((t) => {
+          {TOOLS.map((t, i) => {
             const on = isCapability(t.id) && caps.includes(t.id);
             const always = !isCapability(t.id);
             return (
               <Card
                 key={t.id}
                 glow={on}
+                style={{ '--i': i } as React.CSSProperties}
                 className={cn(
                   'group overflow-hidden',
                   on ? 'border-[var(--primary)]/40' : '',
@@ -140,18 +141,24 @@ export function ToolsPane() {
                       <button
                         onClick={() => toggle(t.id)}
                         disabled={saving === t.id}
-                        className={cn(
-                          'relative h-6 w-10 shrink-0 rounded-full transition-colors',
-                          on ? 'bg-[var(--primary)]' : 'bg-[var(--surface-3)]',
-                          saving === t.id && 'opacity-70',
-                        )}
-                        aria-pressed={on}
+                        role="switch"
+                        aria-checked={on}
                         aria-label={`${on ? 'Disable' : 'Enable'} ${t.title}`}
+                        className={cn(
+                          'relative h-6 w-10 shrink-0 rounded-full',
+                          'transition-[background-color,box-shadow] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
+                          'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
+                          on
+                            ? 'bg-[var(--primary)] shadow-[0_0_12px_-2px_var(--primary-glow)]'
+                            : 'bg-[var(--surface-3)]',
+                        )}
                       >
                         <span
                           className={cn(
-                            'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform',
+                            'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm',
+                            'transition-transform duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-spring)]',
                             on ? 'translate-x-[18px]' : 'translate-x-0.5',
+                            saving === t.id && 'animate-[stark-spin_0.7s_linear_infinite]',
                           )}
                         />
                       </button>

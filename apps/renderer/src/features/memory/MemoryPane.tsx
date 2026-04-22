@@ -29,6 +29,7 @@ export function MemoryPane() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [q, setQ] = useState('');
+  const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const push = useToast((s) => s.push);
 
@@ -41,6 +42,7 @@ export function MemoryPane() {
     if (r.ok && r.data) setSessions(r.data.threads);
     const n = await call<{ notes: Note[] }>({ method: 'GET', path: '/memory/notes' });
     if (n.ok && n.data) setNotes(n.data.notes ?? []);
+    setLoading(false);
   }
   useEffect(() => {
     void loadAll();
@@ -86,7 +88,9 @@ export function MemoryPane() {
             <h2 className="font-mono mb-3 text-[11px] uppercase tracking-[0.2em] text-[var(--fg-ghost)]">
               {q ? `Search · ${filtered.length}` : `Sessions · ${sessions.length}`}
             </h2>
-            {filtered.length === 0 ? (
+            {loading && filtered.length === 0 ? (
+              <EmptyState loading title="" description="" />
+            ) : filtered.length === 0 ? (
               <EmptyState
                 icon={<Library className="h-5 w-5" />}
                 title={q ? 'No matches' : 'No sessions yet'}
@@ -97,11 +101,13 @@ export function MemoryPane() {
                 }
               />
             ) : (
-              <div className="stagger space-y-2">
-                {filtered.slice(0, 80).map((s) => (
+              <div key={q} className="stagger space-y-2">
+                {filtered.slice(0, 80).map((s, i) => (
                   <Card
                     key={s.id}
-                    className={cn('group flex items-start gap-3 p-4 transition-colors hover:bg-[var(--surface-2)]')}
+                    interactive
+                    style={{ '--i': Math.min(i, 12) } as React.CSSProperties}
+                    className={cn('group flex items-start gap-3 p-4')}
                     onClick={() => openSession(s.id)}
                   >
                     <div className="mt-1">

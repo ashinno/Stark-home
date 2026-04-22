@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useSession, type Route } from '../stores/session';
 import { Kbd } from './ui/Atoms';
+import { Presence } from './ui/Presence';
 import { cn } from '../lib/cn';
 
 type Command = {
@@ -132,13 +133,15 @@ export function CommandPalette() {
     return () => window.removeEventListener('keydown', onKey);
   }, [open, commands, cursor]);
 
-  if (!open) return null;
-
   let lastGroup: Command['group'] | null = null;
   return (
+    <Presence when={open} variant="fade" exitMs={160}>
     <div className="fixed inset-0 z-[70] flex items-start justify-center p-8 pt-[14vh]">
-      <div className="absolute inset-0 bg-[var(--bg)]/75 backdrop-blur-md anim-in" onClick={() => setOpen(false)} />
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-lg)] anim-in-scale">
+      <div className="absolute inset-0 bg-[var(--bg)]/75 backdrop-blur-md" onClick={() => setOpen(false)} />
+      <div
+        className="relative w-full max-w-2xl overflow-hidden rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-lg)] anim-in-scale"
+        style={{ animationDelay: '60ms' }}
+      >
         <div className="flex items-center gap-3 border-b border-[var(--line)] px-5 py-4">
           <Search className="h-4 w-4 text-[var(--fg-dim)]" />
           <input
@@ -170,7 +173,9 @@ export function CommandPalette() {
                   onClick={c.run}
                   onMouseEnter={() => setCursor(idx)}
                   className={cn(
-                    'flex w-full items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-left transition-colors',
+                    'flex w-full items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-left',
+                    'transition-[background-color,color] duration-[var(--motion-dur-xs)] ease-[var(--motion-ease-out)]',
+                    'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
                     idx === cursor
                       ? 'bg-[var(--primary-wash)]'
                       : 'hover:bg-[var(--surface-2)]',
@@ -206,5 +211,6 @@ export function CommandPalette() {
         </div>
       </div>
     </div>
+    </Presence>
   );
 }

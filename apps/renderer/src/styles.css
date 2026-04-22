@@ -28,6 +28,20 @@
   --radius-md: 12px;
   --radius-lg: 18px;
   --radius-xl: 24px;
+
+  /* Motion tokens — every transition in the app references one of these. */
+  --motion-dur-xs: 120ms;
+  --motion-dur-sm: 180ms;
+  --motion-dur-md: 240ms;
+  --motion-dur-lg: 360ms;
+  --motion-dur-xl: 560ms;
+
+  --motion-ease-out: cubic-bezier(0.22, 0.8, 0.2, 1);
+  --motion-ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --motion-ease-in: cubic-bezier(0.55, 0, 1, 0.55);
+  --motion-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --motion-stagger: 45ms;
 }
 
 /* ─── Dark (default) ─────────────────────────────────────── */
@@ -283,43 +297,47 @@ textarea:focus-visible {
     transform: translateY(-2px);
   }
 }
+@keyframes stark-out {
+  to {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes stark-out-scale {
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes stark-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
 
 .anim-in {
-  animation: stark-in 0.4s cubic-bezier(0.22, 0.8, 0.2, 1) both;
+  animation: stark-in var(--motion-dur-md) var(--motion-ease-out) both;
 }
 .anim-in-scale {
-  animation: stark-in-scale 0.35s cubic-bezier(0.22, 0.8, 0.2, 1) both;
+  animation: stark-in-scale var(--motion-dur-md) var(--motion-ease-out) both;
+}
+.anim-out {
+  animation: stark-out var(--motion-dur-sm) var(--motion-ease-in) both;
+}
+.anim-out-scale {
+  animation: stark-out-scale var(--motion-dur-sm) var(--motion-ease-in) both;
 }
 
+/* Stagger — drives children using the --i custom property (set inline).
+ * Cap --i at 12 in JS to keep long lists from feeling sluggish. */
 .stagger > * {
-  animation: stark-in 0.42s cubic-bezier(0.22, 0.8, 0.2, 1) both;
-}
-.stagger > *:nth-child(1) {
-  animation-delay: 0.02s;
-}
-.stagger > *:nth-child(2) {
-  animation-delay: 0.07s;
-}
-.stagger > *:nth-child(3) {
-  animation-delay: 0.12s;
-}
-.stagger > *:nth-child(4) {
-  animation-delay: 0.17s;
-}
-.stagger > *:nth-child(5) {
-  animation-delay: 0.22s;
-}
-.stagger > *:nth-child(6) {
-  animation-delay: 0.27s;
-}
-.stagger > *:nth-child(7) {
-  animation-delay: 0.32s;
-}
-.stagger > *:nth-child(8) {
-  animation-delay: 0.37s;
-}
-.stagger > *:nth-child(n + 9) {
-  animation-delay: 0.4s;
+  animation: stark-in var(--motion-dur-lg) var(--motion-ease-out) both;
+  animation-delay: calc(var(--motion-stagger) * var(--i, 0));
 }
 
 /* Reduced motion */
