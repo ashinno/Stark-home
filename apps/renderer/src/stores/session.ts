@@ -42,6 +42,7 @@ type State = {
 
   // UI
   paletteOpen: boolean;
+  homeMode: boolean;
 
   // setters
   setRoute: (r: Route) => void;
@@ -63,6 +64,24 @@ type State = {
   resetThread: () => void;
   setActiveThreadId: (id: string | null) => void;
   setPaletteOpen: (v: boolean) => void;
+  setHomeMode: (v: boolean) => void;
+  toggleHomeMode: () => void;
+};
+
+const HOME_MODE_KEY = 'stark.home_mode';
+const readHomeMode = () => {
+  try {
+    return localStorage.getItem(HOME_MODE_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+const writeHomeMode = (v: boolean) => {
+  try {
+    localStorage.setItem(HOME_MODE_KEY, v ? '1' : '0');
+  } catch {
+    /* ignore */
+  }
 };
 
 export const useSession = create<State>((set) => ({
@@ -81,6 +100,7 @@ export const useSession = create<State>((set) => ({
   streaming: false,
   activeThreadId: null,
   paletteOpen: false,
+  homeMode: readHomeMode(),
 
   setRoute: (route) => set({ route }),
   setSidecar: (sidecar) => set({ sidecar }),
@@ -143,6 +163,16 @@ export const useSession = create<State>((set) => ({
   resetThread: () => set({ messages: [], streaming: false, activeThreadId: null }),
   setActiveThreadId: (activeThreadId) => set({ activeThreadId }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+  setHomeMode: (homeMode) => {
+    writeHomeMode(homeMode);
+    set({ homeMode });
+  },
+  toggleHomeMode: () =>
+    set((s) => {
+      const next = !s.homeMode;
+      writeHomeMode(next);
+      return { homeMode: next };
+    }),
 }));
 
 export type { Route };

@@ -1,4 +1,4 @@
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { Sun, Moon, Monitor, Home } from 'lucide-react';
 import { Wordmark } from './Logo';
 import { Dot, Kbd } from './ui/Atoms';
 import { useSession } from '../stores/session';
@@ -9,7 +9,16 @@ import { ProfilePicker } from './ProfilePicker';
 export function TitleBar() {
   const sidecar = useSession((s) => s.sidecar);
   const setPaletteOpen = useSession((s) => s.setPaletteOpen);
+  const homeMode = useSession((s) => s.homeMode);
+  const setHomeMode = useSession((s) => s.setHomeMode);
+  const setRoute = useSession((s) => s.setRoute);
   const { theme, setTheme } = useTheme();
+
+  const onToggleHomeMode = () => {
+    // Turning home mode on only makes sense from the Home route.
+    if (!homeMode) setRoute('home');
+    setHomeMode(!homeMode);
+  };
 
   const tone =
     sidecar.state === 'ready' ? 'ok' : sidecar.state === 'error' ? 'bad' : 'warn';
@@ -40,6 +49,27 @@ export function TitleBar() {
         </button>
       </div>
       <div className="no-drag flex items-center gap-4">
+        <button
+          onClick={onToggleHomeMode}
+          title={homeMode ? 'Exit Home mode (fullscreen house)' : 'Enter Home mode (fullscreen house + floating chat)'}
+          aria-pressed={homeMode}
+          className={cn(
+            'font-mono flex items-center gap-1.5 rounded-[var(--radius-sm)] border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] transition-colors',
+            homeMode
+              ? 'border-[var(--primary)] bg-[var(--primary-wash)] text-[var(--primary)] shadow-[0_0_0_1px_var(--primary-glow)]'
+              : 'border-[var(--line)] bg-[var(--surface-2)]/60 text-[var(--fg-muted)] hover:border-[var(--line-strong)] hover:text-[var(--fg)]',
+          )}
+        >
+          <Home className="h-3 w-3" />
+          home mode
+          <span
+            aria-hidden
+            className={cn(
+              'ml-0.5 inline-block h-1.5 w-1.5 rounded-full',
+              homeMode ? 'bg-[var(--primary)]' : 'bg-[var(--fg-ghost)]',
+            )}
+          />
+        </button>
         <ProfilePicker />
         <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--fg-muted)]">
           <Dot tone={tone} pulse={sidecar.state !== 'ready'} />

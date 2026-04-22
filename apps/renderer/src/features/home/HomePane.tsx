@@ -27,24 +27,14 @@ import { cn } from '../../lib/cn';
 import { StarkHouse } from '../../components/StarkHouse';
 import { HomeDock } from './HomeDock';
 
-const HOME_MODE_KEY = 'stark.home_mode';
-
 export function HomePane() {
   const userName = useSession((s) => s.userName);
   const appendMessage = useSession((s) => s.appendMessage);
   const resetThread = useSession((s) => s.resetThread);
   const setRoute = useSession((s) => s.setRoute);
+  const homeMode = useSession((s) => s.homeMode);
+  const toggleHomeMode = useSession((s) => s.toggleHomeMode);
   const [draft, setDraft] = useState('');
-  const [homeMode, setHomeMode] = useState<boolean>(() => {
-    return localStorage.getItem(HOME_MODE_KEY) === '1';
-  });
-  const toggleHomeMode = () => {
-    setHomeMode((v) => {
-      const next = !v;
-      localStorage.setItem(HOME_MODE_KEY, next ? '1' : '0');
-      return next;
-    });
-  };
 
   const [threads, setThreads] = useState<Thread[]>([]);
   const [approvals, setApprovals] = useState<Approval[]>([]);
