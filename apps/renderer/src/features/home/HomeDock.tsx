@@ -11,12 +11,14 @@ const DOCK_W = 380;
 const DOCK_H = 500;
 const PAD = 24;
 
+type HomeDockMode = 'floating' | 'sidebar';
+
 /**
- * HomeDock — the floating chat panel that appears in the lower-right corner
- * when Home Mode is active. Shares state with the Threads pane via the
- * `useSession` store, so messages typed here also live in the main thread.
+ * HomeDock — chat surface for Home Mode. It can still render as the original
+ * floating panel, but Home mode uses the sidebar variant so the room and chat
+ * have stable, non-overlapping workspaces.
  */
-export function HomeDock() {
+export function HomeDock({ mode = 'sidebar' }: { mode?: HomeDockMode }) {
   const messages = useSession((s) => s.messages);
   const streaming = useSession((s) => s.streaming);
   const sidecar = useSession((s) => s.sidecar);
@@ -40,14 +42,17 @@ export function HomeDock() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ ox: number; oy: number; mx: number; my: number } | null>(null);
 
+  const sidebar = mode === 'sidebar';
+
   // keep pos within viewport on resize
   useEffect(() => {
+    if (sidebar) return;
     const onResize = () => {
       setPos((p) => clamp(p, collapsed ? 56 : DOCK_W, collapsed ? 56 : DOCK_H));
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, [collapsed]);
+  }, [collapsed, sidebar]);
 
   // autoscroll
   useEffect(() => {
@@ -64,6 +69,7 @@ export function HomeDock() {
   }
 
   function startDrag(e: React.MouseEvent) {
+    if (sidebar) return;
     e.preventDefault();
     dragRef.current = { ox: pos.x, oy: pos.y, mx: e.clientX, my: e.clientY };
     const onMove = (ev: MouseEvent) => {
@@ -120,6 +126,26 @@ export function HomeDock() {
   };
 
   if (collapsed) {
+    if (sidebar) {
+      return (
+        <aside className="relative z-30 flex h-full w-[72px] shrink-0 flex-col items-center border-l-2 border-[#1C2340] bg-[var(--surface)] shadow-[-8px_0_0_rgba(28,35,64,0.18)]">
+          <button
+            onClick={() => setCollapsed(false)}
+            title="Open chat"
+            className="relative mt-4 flex h-14 w-14 items-center justify-center rounded-[var(--radius-md)] border-2 border-[#1C2340] bg-[#F4EEDF] shadow-[4px_4px_0_#1C2340] transition-transform hover:-translate-y-0.5"
+          >
+            <Mascot scale={1} expr="happy" pose="idle" accessory="wings" animate />
+            {streaming && (
+              <span className="absolute right-1 top-3 h-3 w-3 animate-[stark-pulse_1.4s_ease-in-out_infinite] rounded-full border-2 border-[#1C2340] bg-[#F5A524]" />
+            )}
+          </button>
+          <div className="font-mono mt-4 [writing-mode:vertical-rl] text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--fg-muted)]">
+            Stark chat
+          </div>
+        </aside>
+      );
+    }
+
     return (
       <button
         onClick={() => setCollapsed(false)}
@@ -145,16 +171,24 @@ export function HomeDock() {
 
   return (
     <div
-      className="fixed z-40 flex flex-col overflow-hidden rounded-[var(--radius-lg)] border-2 border-[#1C2340] bg-[var(--surface)] shadow-[6px_6px_0_#1C2340]"
-      style={{ left: pos.x, top: pos.y, width: DOCK_W, height: DOCK_H }}
+      className={cn(
+        'z-40 flex flex-col overflow-hidden border-2 border-[#1C2340] bg-[var(--surface)]',
+        sidebar
+          ? 'relative h-full w-[390px] shrink-0 rounded-none border-y-0 border-r-0 shadow-[-8px_0_0_rgba(28,35,64,0.18)]'
+          : 'fixed rounded-[var(--radius-lg)] shadow-[6px_6px_0_#1C2340]',
+      )}
+      style={sidebar ? undefined : { left: pos.x, top: pos.y, width: DOCK_W, height: DOCK_H }}
     >
       {/* drag handle / header */}
       <div
         onMouseDown={startDrag}
-        className="flex h-9 shrink-0 cursor-grab items-center justify-between border-b-2 border-[#1C2340] bg-[#F4EEDF] px-3 text-[#1C2340] active:cursor-grabbing"
+        className={cn(
+          'flex h-9 shrink-0 items-center justify-between border-b-2 border-[#1C2340] bg-[#F4EEDF] px-3 text-[#1C2340]',
+          sidebar ? 'cursor-default' : 'cursor-grab active:cursor-grabbing',
+        )}
       >
         <div className="flex items-center gap-2">
-          <GripHorizontal className="h-3 w-3 opacity-50" />
+          {sidebar ? <MessageCircle className="h-3.5 w-3.5 opacity-60" /> : <GripHorizontal className="h-3 w-3 opacity-50" />}
           <Mascot scale={1} expr="happy" pose="idle" />
           <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em]">
             stark · {activeProfile ?? 'default'}
@@ -216,7 +250,7 @@ export function HomeDock() {
             onClick={submit}
             disabled={!agentReady || !draft.trim()}
             className={cn(
-              'flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] transition-all',
+              'flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] transition-[background-color,border-color,color,box-shadow,transform] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
               draft.trim()
                 ? 'bg-[var(--primary)] text-[var(--primary-ink)] hover:bg-[var(--primary-hover)]'
                 : 'bg-[var(--surface-2)] text-[var(--fg-ghost)]',

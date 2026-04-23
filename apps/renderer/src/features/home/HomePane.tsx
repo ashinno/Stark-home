@@ -24,6 +24,7 @@ import { relTime } from '../../lib/time';
 import type { Approval, Job, Suggestion, Thread } from '@shared/rpc';
 import { cn } from '../../lib/cn';
 import { StarkHouse } from '../../components/StarkHouse';
+import { FloatingMascot } from '../../components/FloatingMascot';
 import { HomeDock } from './HomeDock';
 
 export function HomePane() {
@@ -69,9 +70,11 @@ export function HomePane() {
 
   if (homeMode) {
     return (
-      <div className="relative h-full">
-        <StarkHouse fullscreen />
-        <HomeDock />
+      <div className="flex h-full overflow-hidden bg-[var(--bg)]">
+        <div className="min-w-0 flex-1">
+          <StarkHouse fullscreen />
+        </div>
+        <HomeDock mode="sidebar" />
       </div>
     );
   }
@@ -84,10 +87,17 @@ export function HomePane() {
           <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--primary)]">
             Control center
           </div>
-          <h1 className="font-display mt-2 text-[44px] leading-[1.04] tracking-tight">
-            {userName ? `Hello, ${userName}.` : 'Hello.'}{' '}
-            <span className="italic text-[var(--fg-muted)]">What should Hermes do?</span>
-          </h1>
+          <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2">
+            <h1 className="font-display text-[44px] leading-[1.04] tracking-tight">
+              {userName ? `Hello, ${userName}.` : 'Hello.'}{' '}
+              <span className="italic text-[var(--fg-muted)]">What should Hermes do?</span>
+            </h1>
+            <div className="relative shrink-0" style={{ width: 180, height: 80 }}>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <FloatingMascot scale={2} radius={52} />
+              </div>
+            </div>
+          </div>
 
           <div
             className={cn(
@@ -368,9 +378,9 @@ function FeatureDock({ onGo }: { onGo: (r: Route) => void }) {
             <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-xs)] bg-[var(--primary-wash)] text-[var(--primary)] transition-colors duration-[var(--motion-dur-sm)] group-hover:bg-[var(--primary)] group-hover:text-[var(--primary-ink)]">
               <Icon className="h-3.5 w-3.5" />
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[13px] font-medium text-[var(--fg)]">{label}</span>
+            <div className="w-full min-w-0">
+              <div className="flex w-full items-center gap-1.5">
+                <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[var(--fg)]">{label}</span>
                 <Kbd>⌘{hotkey}</Kbd>
               </div>
               <div className="mt-0.5 truncate text-[11px] text-[var(--fg-muted)]">{blurb}</div>
