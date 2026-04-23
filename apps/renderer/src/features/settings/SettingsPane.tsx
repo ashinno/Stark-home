@@ -28,6 +28,7 @@ import { useTheme } from '../../stores/theme';
 import { call } from '../../lib/rpc';
 import { Logo } from '../../components/Logo';
 import { ProfilePicker } from '../../components/ProfilePicker';
+import { McpGalleryTab } from './McpGalleryTab';
 import type { DoctorCheck } from '@shared/rpc';
 import { cn } from '../../lib/cn';
 
@@ -244,7 +245,7 @@ function BackendsTab() {
 }
 
 function MCPTab() {
-  return <ListWithAction resource="mcp" nameKey="name" statusKey="enabled" itemKey="servers" />;
+  return <McpGalleryTab />;
 }
 
 function ListWithAction({

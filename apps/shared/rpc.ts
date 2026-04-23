@@ -23,7 +23,14 @@ export const IPC = {
   TrayCommand: 'tray:command',
 
   OpenExternal: 'shell:open-external',
+
+  CaptureScreenshot: 'capture:screenshot',
+  CaptureScreenshotRegion: 'capture:screenshot-region',
 } as const;
+
+export type ScreenshotResult =
+  | { ok: true; mime: 'image/png'; dataBase64: string; width: number; height: number }
+  | { ok: false; error: string };
 
 export type Theme = 'system' | 'dark' | 'light';
 
@@ -117,14 +124,38 @@ export type ChatMessage = {
   content: string;
   createdAt: number;
   actions?: Action[];
+  usage?: TokenUsage;
+  /** Attached files (images, PDFs, text) sent alongside user messages. */
+  attachments?: Attachment[];
+};
+
+export type Attachment = {
+  id: string;
+  name: string;
+  mime: string;
+  size: number;
+  kind: 'image' | 'file' | 'screenshot' | 'audio';
+  /** base64 for images/screenshots; text content for text files; undefined for binary we uploaded elsewhere. */
+  data?: string;
+  /** Short preview shown in the UI. */
+  preview?: string;
 };
 
 export type StreamChunk =
   | { type: 'token'; delta: string }
   | { type: 'action'; action: Action }
   | { type: 'action-update'; id: string; patch: Partial<Action> }
-  | { type: 'done'; messageId: string; sessionId?: string }
+  | { type: 'session'; sessionId: string }
+  | { type: 'done'; messageId: string; sessionId?: string; usage?: TokenUsage }
   | { type: 'error'; message: string };
+
+export type TokenUsage = {
+  inputTokens?: number;
+  outputTokens?: number;
+  cachedReadTokens?: number;
+  thoughtTokens?: number;
+  totalTokens?: number;
+};
 
 export type Thread = {
   id: string;

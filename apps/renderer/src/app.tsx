@@ -3,6 +3,7 @@ import { TitleBar } from './components/TitleBar';
 import { Sidebar } from './components/Sidebar';
 import { StatusBar } from './components/StatusBar';
 import { CommandPalette } from './components/CommandPalette';
+import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { ToastStack } from './components/ui/Toast';
 import { RouteTransition } from './components/ui/RouteTransition';
 import { useSession, type Route } from './stores/session';
@@ -97,7 +98,10 @@ export function App() {
     setOnboarded,
   ]);
 
-  // Global hotkeys: ⌘1-5 primary nav, ⌘, settings, ⌘K palette.
+  // Global hotkeys: ⌘1-8 primary nav, ⌘, settings, ⌘K palette, ⌘N new thread,
+  // ⌘/ focus thread search, ⌘? show shortcut help.
+  const resetThread = useSession((s) => s.resetThread);
+  const setActiveThreadId = useSession((s) => s.setActiveThreadId);
   useEffect(() => {
     const routes: Route[] = [
       'home', 'threads', 'tools', 'skills', 'automations', 'memory', 'gateways', 'activity',
@@ -114,11 +118,33 @@ export function App() {
       } else if (e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setPaletteOpen(true);
+      } else if (e.key.toLowerCase() === 'n' && !e.shiftKey) {
+        // ⌘N — jump to Threads and start a new thread.
+        e.preventDefault();
+        setActiveThreadId(null);
+        resetThread();
+        setRoute('threads');
+      } else if (e.key === '/') {
+        // ⌘/ — focus the thread search input if we're on threads, or jump there.
+        e.preventDefault();
+        setRoute('threads');
+        window.setTimeout(() => {
+          const el = document.querySelector<HTMLInputElement>(
+            'aside input[placeholder="Search"]',
+          );
+          el?.focus();
+          el?.select();
+        }, 60);
+      } else if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        // ⌘? or ⌘⇧/ — open the shortcut cheatsheet (dispatch a custom event
+        // that the palette listens for).
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('stark:shortcuts'));
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [setRoute, setPaletteOpen]);
+  }, [setRoute, setPaletteOpen, resetThread, setActiveThreadId]);
 
   // Palette toggle from menu bar or global shortcut.
   useEffect(() => {
@@ -160,6 +186,7 @@ export function App() {
       <StatusBar />
 
       <CommandPalette />
+      <ShortcutsDialog />
       <ToastStack />
       {showOnboarding && <Onboarding onClose={() => setOnboarded(true)} />}
     </div>

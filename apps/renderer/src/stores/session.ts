@@ -60,6 +60,10 @@ type State = {
   appendMessage: (m: ChatMessage) => void;
   updateLastAssistantMessage: (fn: (m: ChatMessage) => ChatMessage) => void;
   patchAssistantDelta: (delta: string) => void;
+  /** Drop every message at or after index ``fromIndex``. Used by edit/regenerate. */
+  truncateMessages: (fromIndex: number) => void;
+  /** Replace a single message's content (edit flow). */
+  editUserMessage: (id: string, content: string) => void;
   setStreaming: (v: boolean) => void;
   resetThread: () => void;
   setActiveThreadId: (id: string | null) => void;
@@ -123,15 +127,15 @@ export const useSession = create<State>((set) => ({
   updateLastAssistantMessage: (fn) =>
     set((s) => {
       const msgs = [...s.messages];
-      for (let i = msgs.length - 1; i >= 0; i--) {
-        if (msgs[i].role === 'assistant') {
-          msgs[i] = fn(msgs[i]);
-          return { messages: msgs };
-        }
+      const last = msgs[msgs.length - 1];
+      // Only mutate an existing assistant message when it's the tail of the
+      // thread (i.e. the one the current stream is building). Otherwise we'd
+      // attach new action cards / tokens to a historical reply from a resumed
+      // thread — which looks to the user like the agent never responded.
+      if (last && last.role === 'assistant') {
+        msgs[msgs.length - 1] = fn(last);
+        return { messages: msgs };
       }
-      // No assistant message yet — create a placeholder so action cards have
-      // a home before the first token arrives. Otherwise events emitted
-      // before streaming (the "Hermes is thinking…" card) get dropped.
       const placeholder: ChatMessage = {
         id: `m${Date.now()}`,
         role: 'assistant',
@@ -159,6 +163,12 @@ export const useSession = create<State>((set) => ({
       }
       return { messages: msgs };
     }),
+  truncateMessages: (fromIndex) =>
+    set((s) => ({ messages: s.messages.slice(0, Math.max(0, fromIndex)) })),
+  editUserMessage: (id, content) =>
+    set((s) => ({
+      messages: s.messages.map((m) => (m.id === id ? { ...m, content } : m)),
+    })),
   setStreaming: (streaming) => set({ streaming }),
   resetThread: () => set({ messages: [], streaming: false, activeThreadId: null }),
   setActiveThreadId: (activeThreadId) => set({ activeThreadId }),

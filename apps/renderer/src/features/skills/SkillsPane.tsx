@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Download, Eye, Github, Plus, Play, RefreshCw, Search, Sparkles, Trash2 } from 'lucide-react';
 import { SectionHeading, Badge, EmptyState } from '../../components/ui/Atoms';
 import { Card } from '../../components/ui/Card';
@@ -47,6 +47,14 @@ const SKILLS_TABS: readonly TabDef<'installed' | 'marketplace'>[] = [
   { id: 'marketplace', label: 'Marketplace' },
 ];
 
+/** Sort options for the installed-skills list. */
+type InstalledSort = 'recent' | 'name' | 'runs';
+const SORT_LABELS: Record<InstalledSort, string> = {
+  recent: 'Recently run',
+  name: 'Name A–Z',
+  runs: 'Most used',
+};
+
 function responseError(r: SidecarResponse): string {
   const detail = typeof r.data === 'object' && r.data && 'detail' in r.data ? String((r.data as { detail: unknown }).detail) : '';
   return detail || r.error || `Request failed (${r.status})`;
@@ -69,6 +77,8 @@ export function SkillsPane() {
   const [installing, setInstalling] = useState<string | null>(null);
   const [inspecting, setInspecting] = useState<string | null>(null);
   const [inspection, setInspection] = useState<InspectResponse | null>(null);
+  const [installedFilter, setInstalledFilter] = useState('');
+  const [installedSort, setInstalledSort] = useState<InstalledSort>('recent');
   const push = useToast((s) => s.push);
 
   const load = async () => {
@@ -165,7 +175,29 @@ export function SkillsPane() {
     setSubmittedQuery(marketQuery);
   }
 
-  const installed = skills.filter((s) => s.source !== 'marketplace');
+  const installedAll = skills.filter((s) => s.source !== 'marketplace');
+
+  const installed = useMemo(() => {
+    const needle = installedFilter.trim().toLowerCase();
+    const list = needle
+      ? installedAll.filter((s) =>
+          [s.name, s.description, s.category, s.trigger, s.identifier]
+            .filter(Boolean)
+            .some((v) => String(v).toLowerCase().includes(needle)),
+        )
+      : installedAll.slice();
+    return list.sort((a, b) => {
+      switch (installedSort) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'runs':
+          return (b.runs ?? 0) - (a.runs ?? 0);
+        case 'recent':
+        default:
+          return (b.last_run ?? 0) - (a.last_run ?? 0);
+      }
+    });
+  }, [installedAll, installedFilter, installedSort]);
 
   return (
     <div className="flex h-full flex-col">
@@ -231,7 +263,7 @@ export function SkillsPane() {
       )}
       <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
         {tab === 'installed' ? (
-          installed.length === 0 ? (
+          installedAll.length === 0 ? (
             <EmptyState
               icon={<Sparkles className="h-5 w-5" />}
               title="No skills yet"
@@ -239,12 +271,48 @@ export function SkillsPane() {
               action={<Button variant="primary" onClick={() => setCreating(true)}>Teach a skill</Button>}
             />
           ) : (
-            <div className="stagger mx-auto grid max-w-5xl grid-cols-1 gap-3 lg:grid-cols-2">
-              {installed.map((s, i) => (
-                <div key={s.id} style={{ '--i': Math.min(i, 12) } as React.CSSProperties}>
-                  <InstalledSkillCard skill={s} onToggle={toggle} onRun={run} onRemove={remove} />
+            <div className="mx-auto max-w-5xl">
+              <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="lg:w-80">
+                  <Input
+                    leading={<Search className="h-4 w-4" />}
+                    placeholder="Filter installed skills…"
+                    value={installedFilter}
+                    onChange={(e) => setInstalledFilter(e.target.value)}
+                  />
                 </div>
-              ))}
+                <div className="flex items-center gap-1.5 text-[11px] text-[var(--fg-muted)]">
+                  <span className="font-mono uppercase tracking-[0.14em] text-[var(--fg-ghost)]">
+                    sort
+                  </span>
+                  {(Object.keys(SORT_LABELS) as InstalledSort[]).map((k) => (
+                    <button
+                      key={k}
+                      onClick={() => setInstalledSort(k)}
+                      className={
+                        installedSort === k
+                          ? 'rounded-[var(--radius-sm)] border border-[var(--primary)]/40 bg-[var(--primary-wash)] px-2 py-1 text-[var(--primary)] font-medium'
+                          : 'rounded-[var(--radius-sm)] border border-[var(--line)] bg-[var(--surface)] px-2 py-1 text-[var(--fg-muted)] hover:border-[var(--line-strong)] hover:text-[var(--fg)]'
+                      }
+                    >
+                      {SORT_LABELS[k]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {installed.length === 0 ? (
+                <p className="text-center text-sm text-[var(--fg-muted)]">
+                  No skills match &ldquo;{installedFilter}&rdquo;.
+                </p>
+              ) : (
+                <div className="stagger grid grid-cols-1 gap-3 lg:grid-cols-2">
+                  {installed.map((s, i) => (
+                    <div key={s.id} style={{ '--i': Math.min(i, 12) } as React.CSSProperties}>
+                      <InstalledSkillCard skill={s} onToggle={toggle} onRun={run} onRemove={remove} />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )
         ) : marketLoading ? (

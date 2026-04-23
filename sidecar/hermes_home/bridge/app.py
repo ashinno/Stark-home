@@ -12,6 +12,7 @@ import signal
 
 from fastapi import Depends, FastAPI
 
+from .acp_client import get_pool
 from .auth import make_verifier
 from .routes import (
     backends,
@@ -54,8 +55,22 @@ def create_app(token: str) -> FastAPI:
 
     @app.post("/shutdown", dependencies=[Depends(verify)])
     async def shutdown() -> dict[str, str]:
+        # Close any persistent ACP children before the interpreter tears down,
+        # otherwise they keep holding their parent session db and stderr pipes.
+        try:
+            await get_pool().shutdown()
+        except Exception:
+            pass
         # Request a graceful uvicorn shutdown; Electron waits for this.
         os.kill(os.getpid(), signal.SIGINT)
         return {"status": "shutting-down"}
+
+    @app.on_event("shutdown")
+    async def _close_acp_pool() -> None:
+        # Also covers SIGINT/SIGTERM paths that skip the /shutdown route.
+        try:
+            await get_pool().shutdown()
+        except Exception:
+            pass
 
     return app

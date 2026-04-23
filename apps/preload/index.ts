@@ -4,6 +4,7 @@ import type {
   CodexStatus,
   InstallerProgress,
   InstallerStatus,
+  ScreenshotResult,
   SidecarRequest,
   SidecarResponse,
   SidecarStatus,
@@ -53,6 +54,10 @@ const api = {
   onPaletteToggle: (cb: () => void) => subscribe<void>(IPC.PaletteToggle, cb),
   onTrayCommand: (cb: (cmd: string) => void) => subscribe<string>(IPC.TrayCommand, cb),
   openExternal: (url: string) => ipcRenderer.invoke(IPC.OpenExternal, url),
+
+  capture: {
+    screen: (): Promise<ScreenshotResult> => ipcRenderer.invoke(IPC.CaptureScreenshot),
+  },
 };
 
 contextBridge.exposeInMainWorld('stark', api);
