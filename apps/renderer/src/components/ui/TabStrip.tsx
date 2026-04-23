@@ -76,16 +76,35 @@ export function TabStrip<K extends string>({
         );
       })}
       {indicator && (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute bottom-0 h-[2px] rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary-glow)]"
-          style={{
-            left: indicator.x + 8,
-            width: Math.max(0, indicator.w - 16),
-            transition:
-              'left var(--motion-dur-md) var(--motion-ease-out), width var(--motion-dur-md) var(--motion-ease-out)',
-          }}
-        />
+        <>
+          <span
+            aria-hidden
+            className="pointer-events-none absolute bottom-0 h-[2px] rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary-glow)]"
+            style={{
+              left: indicator.x + 8,
+              width: Math.max(0, indicator.w - 16),
+              transition:
+                'left var(--motion-dur-md) var(--motion-ease-out), width var(--motion-dur-md) var(--motion-ease-out)',
+            }}
+          />
+          {/* Side tick marks bracket the active tab — reads as a switch. */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute bottom-0 h-1.5 w-px bg-[var(--primary)]/70"
+            style={{
+              left: indicator.x + 8,
+              transition: 'left var(--motion-dur-md) var(--motion-ease-out)',
+            }}
+          />
+          <span
+            aria-hidden
+            className="pointer-events-none absolute bottom-0 h-1.5 w-px bg-[var(--primary)]/70"
+            style={{
+              left: indicator.x + indicator.w - 9,
+              transition: 'left var(--motion-dur-md) var(--motion-ease-out)',
+            }}
+          />
+        </>
       )}
     </div>
   );

@@ -548,11 +548,13 @@ export function ThreadsPane() {
   return (
     <div className="flex h-full">
       {/* Thread list */}
-      <aside className="flex w-72 shrink-0 flex-col border-r border-[var(--line)] bg-[var(--bg-raised)]/40">
+      <aside className="relative flex w-72 shrink-0 flex-col border-r border-[var(--line)] bg-[var(--bg-raised)]/40">
         <div className="border-b border-[var(--line)] px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--fg-ghost)]">
+            <div className="font-mono flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-[var(--fg-ghost)]">
+              <span className="inline-block h-px w-4 bg-[var(--line-strong)]" />
               Threads
+              <span className="text-[var(--fg-ghost)]/70">· {filteredThreads.length.toString().padStart(2, '0')}</span>
             </div>
             <Button size="sm" variant="ghost" onClick={newThread} leading={<RotateCcw className="h-3 w-3" />}>
               new
@@ -651,16 +653,27 @@ export function ThreadsPane() {
           void ingestFiles(e.dataTransfer.files);
         }}
       >
-        <div className="flex items-center justify-between border-b border-[var(--line)] px-8 py-4">
+        <div className="relative flex items-center justify-between border-b border-[var(--line)] px-8 py-4">
+          {streaming && <span aria-hidden className="scanline" />}
           <div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--primary)]">
+            <div className="font-mono flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-[var(--primary)]">
+              <span className="inline-block h-px w-6 bg-[var(--primary)]/60" />
               Conversation
             </div>
-            <div className="mt-0.5 flex items-baseline gap-3">
+            <div className="mt-1 flex items-baseline gap-3">
               <h1 className="font-display text-2xl">
-                {userName ? `For ${userName}` : 'Active thread'}
+                {userName ? (
+                  <>
+                    For <span className="italic text-[var(--fg-muted)]">{userName}</span>
+                  </>
+                ) : (
+                  'Active thread'
+                )}
               </h1>
-              <span className="font-mono text-[11px] text-[var(--fg-ghost)]">· {activeProvider}</span>
+              <span className="font-mono flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.18em] text-[var(--fg-ghost)]">
+                <span className="inline-block h-1 w-1 rounded-full bg-[var(--fg-ghost)]" />
+                {activeProvider}
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -875,40 +888,96 @@ export function ThreadsPane() {
 }
 
 function EmptyThread({ ready }: { ready: boolean }) {
+  const prompts = [
+    'Plan my week',
+    'Summarize the open PRs in this repo',
+    'Draft a reply to my unread email',
+    'What changed on my Mac today?',
+  ];
   return (
-    <div className="flex h-full flex-col items-center justify-center pb-14 text-center">
-      <Mascot scale={3} expr={ready ? 'happy' : 'sleepy'} pose="wave" accessory="wings" trackCursor />
-      <h2 className="font-display mt-5 text-4xl">
-        {ready ? 'A fresh thread.' : 'Starting the engine.'}
+    <div className="relative flex h-full flex-col items-center justify-center overflow-hidden pb-14 text-center">
+      {/* Blueprint backdrop — graph-paper rules fading toward the edges. */}
+      <div
+        aria-hidden
+        className="blueprint-rules blueprint-fade pointer-events-none absolute inset-0"
+      />
+
+      {/* Tiny meta annotation — reads as a drafting stamp. */}
+      <div
+        className="font-mono anim-in relative z-10 mb-6 flex items-center gap-2 text-[9px] uppercase tracking-[0.28em] text-[var(--fg-ghost)]"
+        style={{ animationDelay: '40ms' } as React.CSSProperties}
+      >
+        <span className="inline-block h-px w-8 bg-[var(--line-strong)]" />
+        <span>sheet 01 · fresh thread</span>
+        <span className="inline-block h-px w-8 bg-[var(--line-strong)]" />
+      </div>
+
+      <div className="relative z-10">
+        <Mascot scale={3} expr={ready ? 'happy' : 'sleepy'} pose="wave" accessory="wings" trackCursor />
+      </div>
+
+      <h2
+        className="font-display anim-in relative z-10 mt-5 text-[44px] leading-none tracking-tight"
+        style={{ animationDelay: '120ms' } as React.CSSProperties}
+      >
+        {ready ? (
+          <>
+            A <span className="italic text-[var(--primary)]">fresh</span> thread.
+          </>
+        ) : (
+          'Starting the engine.'
+        )}
       </h2>
-      <p className="mt-3 max-w-md text-sm text-[var(--fg-muted)]">
+
+      <div
+        className="ink-rule mt-4 h-px w-24"
+        style={{ animationDelay: '220ms' } as React.CSSProperties}
+      />
+
+      <p
+        className="font-display anim-in relative z-10 mt-4 max-w-md text-[15px] italic leading-[1.55] text-[var(--fg-muted)]"
+        style={{ animationDelay: '280ms' } as React.CSSProperties}
+      >
         {ready
           ? 'Ask anything. Hermes may use files, the browser, the terminal, memory, the web — every action will appear as a card you can pause or approve.'
           : 'The Hermes engine is warming up. This only takes a moment on first launch.'}
       </p>
-      <div className="mt-6 flex flex-wrap justify-center gap-2">
-        {[
-          'Plan my week',
-          'Summarize the open PRs in this repo',
-          'Draft a reply to my unread email',
-          'What changed on my Mac today?',
-        ].map((p) => (
-          <button
-            key={p}
-            onClick={() => {
-              const ta = document.querySelector<HTMLTextAreaElement>('textarea');
-              if (ta) {
-                ta.value = p;
-                ta.dispatchEvent(new Event('input', { bubbles: true }));
-                ta.focus();
-              }
-            }}
-            className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-3.5 py-1.5 text-[12px] text-[var(--fg-muted)] transition-colors hover:border-[var(--primary)]/50 hover:text-[var(--fg)]"
+
+      {ready && (
+        <>
+          <div
+            className="font-mono anim-in relative z-10 mt-8 mb-3 flex items-center gap-3 text-[9px] uppercase tracking-[0.24em] text-[var(--fg-ghost)]"
+            style={{ animationDelay: '360ms' } as React.CSSProperties}
           >
-            {p}
-          </button>
-        ))}
-      </div>
+            <span className="annotation-num">§</span>
+            <span>suggested starters</span>
+          </div>
+          <div className="stagger relative z-10 flex flex-wrap justify-center gap-2">
+            {prompts.map((p, i) => (
+              <button
+                key={p}
+                style={{ ['--i' as string]: String(Math.min(12, i + 1)) } as React.CSSProperties}
+                onClick={() => {
+                  const ta = document.querySelector<HTMLTextAreaElement>('textarea');
+                  if (ta) {
+                    ta.value = p;
+                    ta.dispatchEvent(new Event('input', { bubbles: true }));
+                    ta.focus();
+                  }
+                }}
+                className={cn(
+                  'group tick-frame flex items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--line)] bg-[var(--surface)]/90 px-3.5 py-1.5 text-[12px] text-[var(--fg-muted)]',
+                  'transition-[color,border-color,background-color,transform] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
+                  'hover:-translate-y-[1px] hover:border-[var(--primary)]/60 hover:bg-[var(--surface-2)] hover:text-[var(--fg)]',
+                )}
+              >
+                <span className="annotation-num">{String(i + 1).padStart(2, '0')}</span>
+                <span>{p}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

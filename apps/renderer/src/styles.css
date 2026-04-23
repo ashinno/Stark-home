@@ -84,6 +84,13 @@
   --shadow-lg:
     0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 30px 80px -30px rgba(0, 0, 0, 0.75);
   --ring-focus: 0 0 0 3px var(--primary-wash);
+  --ring-focus-strong: 0 0 0 3px var(--primary-wash), 0 0 20px -4px var(--primary-glow);
+
+  /* Blueprint / annotation surface tints */
+  --grid-ink: rgba(107, 139, 255, 0.06);
+  --grid-ink-strong: rgba(107, 139, 255, 0.12);
+  --grain-ink: rgba(255, 255, 255, 0.025);
+  --tick-ink: rgba(255, 255, 255, 0.14);
 }
 
 /* ─── Light ──────────────────────────────────────────────── */
@@ -123,6 +130,13 @@
   --shadow-md: 0 2px 10px -4px rgba(15, 17, 32, 0.1), 0 12px 30px -20px rgba(15, 17, 32, 0.15);
   --shadow-lg: 0 30px 80px -30px rgba(15, 17, 32, 0.25);
   --ring-focus: 0 0 0 3px var(--primary-wash);
+  --ring-focus-strong: 0 0 0 3px var(--primary-wash), 0 0 18px -4px var(--primary-glow);
+
+  /* Blueprint / annotation surface tints */
+  --grid-ink: rgba(51, 88, 245, 0.055);
+  --grid-ink-strong: rgba(51, 88, 245, 0.12);
+  --grain-ink: rgba(15, 17, 32, 0.02);
+  --tick-ink: rgba(15, 17, 32, 0.22);
 }
 
 html,
@@ -319,6 +333,40 @@ textarea:focus-visible {
     transform: none;
   }
 }
+@keyframes stark-ink-draw {
+  from {
+    transform: scaleX(0);
+    opacity: 0.4;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+@keyframes stark-tick-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes stark-scan {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  35%,
+  65% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
 
 .anim-in {
   animation: stark-in var(--motion-dur-md) var(--motion-ease-out) both;
@@ -354,6 +402,7 @@ textarea:focus-visible {
 /* ─── Atmosphere ─────────────────────────────────────────── */
 .stark-bg {
   position: relative;
+  isolation: isolate;
   background:
     radial-gradient(
       900px 400px at 80% -200px,
@@ -368,6 +417,28 @@ textarea:focus-visible {
     var(--bg);
 }
 
+/* Subtle grain over the atmosphere layer to kill banding and
+ * give the app a tactile, drafted feel. */
+.stark-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.04 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+  background-size: 200px 200px;
+}
+[data-theme='light'] .stark-bg::after {
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.06  0 0 0 0 0.07  0 0 0 0 0.12  0 0 0 0.035 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+}
+.stark-bg > * {
+  position: relative;
+  z-index: 1;
+}
+
 .hairline {
   height: 1px;
   background: linear-gradient(
@@ -377,4 +448,199 @@ textarea:focus-visible {
     var(--line-strong) 85%,
     transparent
   );
+}
+
+.hairline-dashed {
+  height: 1px;
+  background-image: linear-gradient(
+    to right,
+    var(--line-strong) 50%,
+    transparent 50%
+  );
+  background-size: 6px 1px;
+  background-repeat: repeat-x;
+  background-position: 0 50%;
+  opacity: 0.6;
+}
+
+/* ─── Blueprint: dotted grid backdrop ────────────────────────
+ * A subtle dot grid that gives any surface a "schematic paper"
+ * feel. Use on hero sections, empty states, dialogs — anywhere
+ * we want the interface to read as engineered rather than slick.
+ * Kept very low-contrast so long sessions stay comfortable. */
+.blueprint-grid {
+  position: relative;
+  background-image:
+    radial-gradient(
+      circle at 1px 1px,
+      var(--grid-ink) 1px,
+      transparent 0
+    );
+  background-size: 22px 22px;
+  background-position: 0 0;
+}
+
+.blueprint-grid-dense {
+  background-image:
+    radial-gradient(
+      circle at 1px 1px,
+      var(--grid-ink-strong) 1px,
+      transparent 0
+    );
+  background-size: 14px 14px;
+  background-position: 0 0;
+}
+
+/* Classic graph paper: faint horizontal + vertical rules. */
+.blueprint-rules {
+  background-image:
+    linear-gradient(to right, var(--grid-ink) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-ink) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: -1px -1px;
+}
+
+/* Edge-fading mask so the grid dissolves into the surface. */
+.blueprint-fade {
+  mask-image: radial-gradient(
+    ellipse 80% 80% at 50% 40%,
+    black 40%,
+    transparent 100%
+  );
+  -webkit-mask-image: radial-gradient(
+    ellipse 80% 80% at 50% 40%,
+    black 40%,
+    transparent 100%
+  );
+}
+
+/* ─── Film grain overlay ─────────────────────────────────────
+ * Very low-opacity SVG noise that prevents banding on the big
+ * radial gradients. Apply to a top-level container. */
+.grain {
+  position: relative;
+  isolation: isolate;
+}
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.045 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+  background-size: 160px 160px;
+}
+[data-theme='light'] .grain::after {
+  opacity: 0.6;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.06  0 0 0 0 0.07  0 0 0 0 0.12  0 0 0 0.04 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+}
+
+/* ─── Tick marks / corner brackets ──────────────────────────
+ * ::before + ::after crosshair markers. Use on cards, hero
+ * boxes, or empty states to reinforce the "blueprint" frame. */
+.tick-frame {
+  position: relative;
+}
+.tick-frame::before,
+.tick-frame::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  opacity: 0.9;
+  border-color: var(--tick-ink);
+  transition: border-color var(--motion-dur-md) var(--motion-ease-out);
+}
+.tick-frame::before {
+  top: -1px;
+  left: -1px;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+.tick-frame::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 1px solid;
+  border-right: 1px solid;
+}
+.tick-frame:hover::before,
+.tick-frame:hover::after,
+.tick-frame:focus-within::before,
+.tick-frame:focus-within::after {
+  border-color: var(--primary);
+  opacity: 1;
+}
+
+.tick-frame-primary::before,
+.tick-frame-primary::after {
+  border-color: var(--primary);
+  opacity: 1;
+}
+
+/* Ink-draw rule: a line that sweeps in from the left. Use for
+ * hero section separators so they feel drafted, not default. */
+.ink-rule {
+  position: relative;
+  height: 1px;
+  background: var(--line-strong);
+  transform-origin: left center;
+  animation: stark-ink-draw var(--motion-dur-xl) var(--motion-ease-out) both;
+}
+.ink-rule-primary {
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--primary) 30%,
+    var(--primary) 70%,
+    transparent
+  );
+  box-shadow: 0 0 8px -2px var(--primary-glow);
+}
+
+/* Annotation label — numbered callouts for ordered lists that
+ * want a blueprint feel instead of default bullets. */
+.annotation-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4em;
+  height: 1.4em;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.65em;
+  letter-spacing: 0;
+  color: var(--fg-muted);
+  background: var(--surface);
+  transition:
+    border-color var(--motion-dur-sm) var(--motion-ease-out),
+    color var(--motion-dur-sm) var(--motion-ease-out),
+    background-color var(--motion-dur-sm) var(--motion-ease-out);
+}
+.group:hover .annotation-num,
+*:hover > .annotation-num {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-wash);
+}
+
+/* Scanning line — single vertical sweep used on "streaming"
+ * surfaces to hint that something is actively being drafted. */
+.scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--primary-glow),
+    transparent
+  );
+  animation: stark-scan 2.4s var(--motion-ease-inout) infinite;
+  pointer-events: none;
 }

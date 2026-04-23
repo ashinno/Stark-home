@@ -145,6 +145,7 @@ export function MemoryPane() {
         <div className="flex items-end justify-between gap-6">
           <SectionHeading
             eyebrow="Memory"
+            stamp="sheet 06 · long-term store"
             title="What Hermes remembers"
             description="Real sessions across this profile, plus pinned notes that surface in every conversation."
           />

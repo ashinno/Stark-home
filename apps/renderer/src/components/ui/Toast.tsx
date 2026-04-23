@@ -54,10 +54,16 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
     return () => window.clearTimeout(t);
   }, []);
 
+  const stripeTone = {
+    success: 'bg-[var(--ok)]',
+    error: 'bg-[var(--bad)]',
+    info: 'bg-[var(--primary)]',
+  }[toast.kind];
+
   return (
     <div
       className={cn(
-        'pointer-events-auto flex min-w-[280px] max-w-sm items-start gap-3',
+        'tick-frame pointer-events-auto relative flex min-w-[280px] max-w-sm items-start gap-3 overflow-hidden',
         'rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--surface-2)]',
         'px-4 py-3 shadow-[var(--shadow-md)]',
         exiting ? 'anim-out' : 'anim-in',
@@ -65,8 +71,13 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
       role="status"
       aria-live="polite"
     >
+      {/* Left tone stripe — instantly communicates kind at a glance. */}
+      <span aria-hidden className={cn('absolute left-0 top-0 h-full w-0.5', stripeTone)} />
       <div className="mt-0.5">{icons[toast.kind]}</div>
       <div className="min-w-0 flex-1">
+        <div className="font-mono mb-0.5 text-[9px] uppercase tracking-[0.2em] text-[var(--fg-ghost)]">
+          {toast.kind}
+        </div>
         <div className="text-sm font-medium">{toast.title}</div>
         {toast.description && (
           <div className="mt-0.5 text-xs text-[var(--fg-muted)]">{toast.description}</div>

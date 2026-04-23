@@ -120,6 +120,7 @@ export function GatewaysPane() {
         <div className="flex items-end justify-between gap-6">
           <SectionHeading
             eyebrow="Gateways"
+            stamp="sheet 07 · inbound channels"
             title="Reach Hermes from your apps"
             description={`Per-profile messaging bridges. Real config is read from ${profile ? `~/.hermes/profiles/${profile}/.env` : '~/.hermes/.env'}.`}
           />

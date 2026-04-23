@@ -139,10 +139,24 @@ export function CommandPalette() {
     <div className="fixed inset-0 z-[70] flex items-start justify-center p-8 pt-[14vh]">
       <div className="absolute inset-0 bg-[var(--bg)]/75 backdrop-blur-md" onClick={() => setOpen(false)} />
       <div
-        className="relative w-full max-w-2xl overflow-hidden rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-lg)] anim-in-scale"
+        className="tick-frame tick-frame-primary relative w-full max-w-2xl overflow-hidden rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-lg)] anim-in-scale"
         style={{ animationDelay: '60ms' }}
       >
-        <div className="flex items-center gap-3 border-b border-[var(--line)] px-5 py-4">
+        {/* Faint grid wash behind the rows so the palette reads as a schematic. */}
+        <div
+          aria-hidden
+          className="blueprint-grid pointer-events-none absolute inset-0 opacity-40"
+          style={{
+            maskImage: 'linear-gradient(to bottom, transparent, black 30%, black 80%, transparent)',
+            WebkitMaskImage:
+              'linear-gradient(to bottom, transparent, black 30%, black 80%, transparent)',
+          }}
+        />
+        <div className="relative flex items-center gap-3 border-b border-[var(--line)] px-5 py-4">
+          <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-[var(--primary)]">
+            cmd
+          </span>
+          <span className="h-4 w-px bg-[var(--line-strong)]" />
           <Search className="h-4 w-4 text-[var(--fg-dim)]" />
           <input
             ref={inputRef}
@@ -153,10 +167,13 @@ export function CommandPalette() {
           />
           <Kbd>esc</Kbd>
         </div>
-        <div className="max-h-[50vh] overflow-y-auto px-2 py-2">
+        <div className="relative max-h-[50vh] overflow-y-auto px-2 py-2">
           {commands.length === 0 && (
-            <div className="px-4 py-10 text-center text-sm text-[var(--fg-muted)]">
-              No results. Try a different phrase.
+            <div className="px-4 py-10 text-center">
+              <div className="font-mono mb-1 text-[9px] uppercase tracking-[0.24em] text-[var(--fg-ghost)]">
+                no match
+              </div>
+              <div className="text-sm text-[var(--fg-muted)]">Try a different phrase.</div>
             </div>
           )}
           {commands.map((c, idx) => {
@@ -165,7 +182,8 @@ export function CommandPalette() {
             return (
               <div key={c.id}>
                 {showGroup && (
-                  <div className="font-mono mt-2 mb-1 px-3 text-[10px] uppercase tracking-[0.18em] text-[var(--fg-ghost)]">
+                  <div className="font-mono mt-3 mb-1 flex items-center gap-2 px-3 text-[10px] uppercase tracking-[0.18em] text-[var(--fg-ghost)]">
+                    <span className="inline-block h-px w-3 bg-[var(--line-strong)]" />
                     {c.group}
                   </div>
                 )}
@@ -173,7 +191,7 @@ export function CommandPalette() {
                   onClick={c.run}
                   onMouseEnter={() => setCursor(idx)}
                   className={cn(
-                    'flex w-full items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-left',
+                    'group flex w-full items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-left',
                     'transition-[background-color,color] duration-[var(--motion-dur-xs)] ease-[var(--motion-ease-out)]',
                     'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
                     idx === cursor
@@ -181,6 +199,16 @@ export function CommandPalette() {
                       : 'hover:bg-[var(--surface-2)]',
                   )}
                 >
+                  <span
+                    className={cn(
+                      'font-mono w-6 shrink-0 text-left text-[9.5px] tabular-nums tracking-[0.08em]',
+                      idx === cursor
+                        ? 'text-[var(--primary)]'
+                        : 'text-[var(--fg-ghost)] group-hover:text-[var(--fg-dim)]',
+                    )}
+                  >
+                    {String(idx + 1).padStart(2, '0')}
+                  </span>
                   <c.icon
                     className={cn(
                       'h-4 w-4',
@@ -199,13 +227,14 @@ export function CommandPalette() {
             );
           })}
         </div>
-        <div className="flex items-center justify-between border-t border-[var(--line)] bg-[var(--surface-2)]/60 px-4 py-2 text-[11px] text-[var(--fg-muted)]">
+        <div className="relative flex items-center justify-between border-t border-[var(--line)] bg-[var(--surface-2)]/60 px-4 py-2 text-[11px] text-[var(--fg-muted)]">
           <div className="flex items-center gap-2">
             <Kbd>↑↓</Kbd> navigate
             <span className="opacity-60">·</span>
             <Kbd>↵</Kbd> open
           </div>
-          <div className="font-mono text-[10px] uppercase tracking-[0.14em]">
+          <div className="font-mono flex items-center gap-2 text-[10px] uppercase tracking-[0.14em]">
+            <span className="inline-block h-1 w-1 rounded-full bg-[var(--primary)]" />
             stark · command palette
           </div>
         </div>

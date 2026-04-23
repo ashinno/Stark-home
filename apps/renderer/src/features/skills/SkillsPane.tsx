@@ -204,6 +204,7 @@ export function SkillsPane() {
       <div className="flex items-center justify-between border-b border-[var(--line)] px-8 py-5">
         <SectionHeading
           eyebrow="Skills"
+          stamp="sheet 04 · procedure library"
           title="Procedures Hermes has learned"
           description="Run installed skills, browse the Hermes Skills Hub, or import a GitHub skill source."
         />

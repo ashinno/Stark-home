@@ -52,6 +52,7 @@ export function SettingsPane() {
       <div className="border-b border-[var(--line)] px-8 py-5">
         <SectionHeading
           eyebrow="Settings"
+          stamp="sheet 09 · configuration"
           title="Make Stark yours"
           description="Everything the control center needs: health, providers, gateways, backends, MCP, and account."
         />

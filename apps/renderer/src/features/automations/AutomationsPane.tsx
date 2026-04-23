@@ -131,6 +131,7 @@ export function AutomationsPane() {
       <div className="flex items-center justify-between border-b border-[var(--line)] px-8 py-5">
         <SectionHeading
           eyebrow="Automations"
+          stamp="sheet 05 · scheduled tasks"
           title="Work that runs on a rhythm"
           description="Describe it in plain English. Hermes turns it into a cron, delivery, and run history."
         />

@@ -45,8 +45,20 @@ export function Sidebar() {
   }, [route]);
 
   return (
-    <nav className="flex w-60 shrink-0 flex-col border-r border-[var(--line)] bg-[var(--bg-raised)]/50 p-3">
-      <div className="font-mono mb-2 mt-1 px-3 text-[10px] uppercase tracking-[0.22em] text-[var(--fg-ghost)]">
+    <nav className="relative flex w-60 shrink-0 flex-col border-r border-[var(--line)] bg-[var(--bg-raised)]/50 p-3">
+      {/* Quiet dot grid — nods to a drafting table. Masked so it fades
+       * into the surrounding chrome without fighting the content. */}
+      <div
+        aria-hidden
+        className="blueprint-grid pointer-events-none absolute inset-0 opacity-50"
+        style={{
+          maskImage: 'linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
+          WebkitMaskImage:
+            'linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
+        }}
+      />
+      <div className="font-mono relative mb-2 mt-1 flex items-center gap-2 px-3 text-[10px] uppercase tracking-[0.22em] text-[var(--fg-ghost)]">
+        <span className="inline-block h-px w-3 bg-[var(--line-strong)]" />
         Control center
       </div>
       <div ref={rowRef} className="relative flex flex-col gap-0.5">
@@ -83,6 +95,16 @@ export function Sidebar() {
                   : 'text-[var(--fg-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--fg)]',
               )}
             >
+              <span
+                className={cn(
+                  'font-mono w-5 shrink-0 text-left text-[9.5px] tabular-nums tracking-[0.08em]',
+                  active
+                    ? 'text-[var(--primary)]'
+                    : 'text-[var(--fg-ghost)] group-hover:text-[var(--fg-dim)]',
+                )}
+              >
+                {String(i + 1).padStart(2, '0')}
+              </span>
               <Icon
                 className={cn(
                   'h-4 w-4 transition-colors duration-[var(--motion-dur-sm)]',
@@ -103,12 +125,13 @@ export function Sidebar() {
         })}
       </div>
 
-      <div className="mt-auto flex flex-col gap-3">
+      <div className="relative mt-auto flex flex-col gap-3">
+        <div className="hairline-dashed" />
         <button
           onClick={() => setRoute('settings')}
           aria-current={route === 'settings' ? 'page' : undefined}
           className={cn(
-            'flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-sm',
+            'group flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-sm',
             'transition-[background-color,color] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
             'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
             route === 'settings'
@@ -116,18 +139,23 @@ export function Sidebar() {
               : 'text-[var(--fg-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--fg)]',
           )}
         >
+          <span className="font-mono w-5 shrink-0 text-left text-[9.5px] tracking-[0.08em] text-[var(--fg-ghost)] group-hover:text-[var(--fg-dim)]">
+            ※
+          </span>
           <Cog className={cn('h-4 w-4 transition-colors duration-[var(--motion-dur-sm)]', route === 'settings' ? 'text-[var(--primary)]' : 'text-[var(--fg-dim)]')} />
           <span className="flex-1 text-left">Settings</span>
           <Kbd>⌘,</Kbd>
         </button>
-        <div className="hairline" />
         <div className="flex items-center gap-2.5 px-3">
           <Logo size={20} tone="primary" />
-          <div>
+          <div className="min-w-0">
             <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--fg-muted)]">
               Stark
             </div>
-            <div className="text-[10px] text-[var(--fg-ghost)]">for Hermes Agent</div>
+            <div className="font-mono flex items-center gap-1 text-[9.5px] uppercase tracking-[0.14em] text-[var(--fg-ghost)]">
+              <span className="inline-block h-1 w-1 rounded-full bg-[var(--primary)]/60" />
+              for Hermes Agent
+            </div>
           </div>
         </div>
       </div>

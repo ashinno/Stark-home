@@ -66,19 +66,20 @@ export function ActionCard({
   return (
     <div
       className={cn(
-        'rounded-[var(--radius-md)] border bg-[var(--surface)] overflow-hidden',
+        'tick-frame relative rounded-[var(--radius-md)] border bg-[var(--surface)] overflow-hidden',
         needsApproval
           ? 'border-[var(--accent-signal)]/50 shadow-[0_0_24px_-8px_var(--accent-signal-wash)]'
           : 'border-[var(--line)]',
         'anim-in',
       )}
     >
-      <div className="flex items-start gap-3 px-3.5 py-3">
+      {running && <span aria-hidden className="scanline" />}
+      <div className="relative flex items-start gap-3 px-3.5 py-3">
         <div
           className={cn(
-            'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-xs)]',
+            'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-xs)] border border-[var(--line)]',
             'bg-[var(--surface-2)] text-[var(--fg-muted)]',
-            running && 'text-[var(--primary)]',
+            running && 'border-[var(--primary)]/40 text-[var(--primary)]',
           )}
         >
           <Icon className="h-3.5 w-3.5" />

@@ -115,6 +115,7 @@ export function ActivityPane() {
       <div className="flex items-center justify-between border-b border-[var(--line)] px-8 py-5">
         <SectionHeading
           eyebrow="Activity"
+          stamp="sheet 08 · live telemetry"
           title="What Hermes is doing right now"
           description={'Running jobs, pending approvals, and cost \u2014 refreshed every 3s.'}
         />

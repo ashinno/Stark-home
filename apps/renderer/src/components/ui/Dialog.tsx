@@ -66,7 +66,7 @@ export function Dialog({
         <div
           ref={panelRef}
           className={cn(
-            'relative w-full anim-in-scale rounded-[var(--radius-xl)]',
+            'tick-frame relative w-full anim-in-scale rounded-[var(--radius-xl)]',
             'border border-[var(--line)] bg-[var(--surface)]',
             'shadow-[var(--shadow-lg)]',
             widths[size],
@@ -74,27 +74,40 @@ export function Dialog({
           style={{ animationDelay: '60ms' }}
         >
           {(title || closable) && (
-            <div className="flex items-start justify-between gap-6 px-7 pt-6 pb-3">
-              <div>
-                {title && (
-                  <h2 className="font-display text-[28px] leading-tight">{title}</h2>
-                )}
-                {description && (
-                  <p className="mt-1 text-sm text-[var(--fg-muted)]">{description}</p>
+            <>
+              <div className="flex items-start justify-between gap-6 px-7 pt-6 pb-3">
+                <div>
+                  {title && (
+                    <>
+                      <div className="font-mono mb-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-[var(--primary)]">
+                        <span className="inline-block h-px w-4 bg-[var(--primary)]/70" />
+                        dialog
+                      </div>
+                      <h2 className="font-display text-[28px] leading-tight">{title}</h2>
+                    </>
+                  )}
+                  {description && (
+                    <p className="mt-1 text-sm text-[var(--fg-muted)]">{description}</p>
+                  )}
+                </div>
+                {closable && (
+                  <button
+                    onClick={onClose}
+                    aria-label="Close dialog"
+                    className="rounded-full p-1.5 text-[var(--fg-dim)] transition-colors duration-[var(--motion-dur-sm)] hover:bg-[var(--surface-2)] hover:text-[var(--fg)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 )}
               </div>
-              {closable && (
-                <button
-                  onClick={onClose}
-                  aria-label="Close dialog"
-                  className="rounded-full p-1.5 text-[var(--fg-dim)] transition-colors duration-[var(--motion-dur-sm)] hover:bg-[var(--surface-2)] hover:text-[var(--fg)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+              <div
+                aria-hidden
+                className="ink-rule mx-7 h-px"
+                style={{ background: 'var(--line)', transformOrigin: 'left center' }}
+              />
+            </>
           )}
-          <div className="px-7 pb-7">{children}</div>
+          <div className="px-7 pb-7 pt-5">{children}</div>
         </div>
       </div>
     </Presence>

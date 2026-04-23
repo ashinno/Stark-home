@@ -82,15 +82,25 @@ export function EmptyState({
     );
   }
   return (
-    <div className="anim-in flex flex-col items-center justify-center py-16 text-center">
+    <div className="anim-in relative flex flex-col items-center justify-center py-16 text-center">
+      {/* Blueprint dot grid fades in behind the message — frames the void. */}
+      <div
+        aria-hidden
+        className="blueprint-grid blueprint-fade pointer-events-none absolute inset-0 opacity-60"
+      />
+      <div className="font-mono relative mb-4 flex items-center gap-2 text-[9px] uppercase tracking-[0.26em] text-[var(--fg-ghost)]">
+        <span className="inline-block h-px w-6 bg-[var(--line-strong)]" />
+        empty
+        <span className="inline-block h-px w-6 bg-[var(--line-strong)]" />
+      </div>
       {icon && (
-        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface-2)] text-[var(--fg-dim)]">
+        <div className="relative mb-4 flex h-11 w-11 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface-2)] text-[var(--fg-dim)]">
           {icon}
         </div>
       )}
-      <h3 className="font-display text-2xl">{title}</h3>
-      <p className="mt-1 max-w-md text-sm text-[var(--fg-muted)]">{description}</p>
-      {action && <div className="mt-5">{action}</div>}
+      <h3 className="font-display relative text-2xl">{title}</h3>
+      <p className="relative mt-1 max-w-md text-sm text-[var(--fg-muted)]">{description}</p>
+      {action && <div className="relative mt-5">{action}</div>}
     </div>
   );
 }
@@ -100,21 +110,31 @@ export function SectionHeading({
   title,
   description,
   trailing,
+  stamp,
 }: {
   eyebrow?: string;
   title: string;
   description?: string;
   trailing?: ReactNode;
+  /** Small schematic annotation placed below the title — "sheet 02 · kind" style. */
+  stamp?: string;
 }) {
   return (
     <div className="flex items-end justify-between gap-6">
       <div>
         {eyebrow && (
-          <div className="font-mono mb-1.5 text-[10px] uppercase tracking-[0.2em] text-[var(--primary)]">
+          <div className="font-mono mb-1.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[var(--primary)]">
+            <span className="inline-block h-px w-6 bg-[var(--primary)]/60" />
             {eyebrow}
           </div>
         )}
         <h1 className="font-display text-[30px] leading-tight">{title}</h1>
+        {stamp && (
+          <div className="font-mono mt-1 flex items-center gap-2 text-[9.5px] uppercase tracking-[0.22em] text-[var(--fg-ghost)]">
+            <span>§</span>
+            {stamp}
+          </div>
+        )}
         {description && (
           <p className="mt-1.5 max-w-2xl text-sm text-[var(--fg-muted)]">{description}</p>
         )}

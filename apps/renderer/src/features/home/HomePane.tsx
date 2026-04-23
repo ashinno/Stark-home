@@ -80,18 +80,26 @@ export function HomePane() {
     <div className="stark-bg flex h-full flex-col">
       {/* Hero prompt */}
       <section className="relative px-8 pb-6 pt-10">
-        <div className="mx-auto max-w-4xl">
-          <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--primary)]">
+        {/* Subtle blueprint grid behind the hero, fading outward. */}
+        <div
+          aria-hidden
+          className="blueprint-grid blueprint-fade pointer-events-none absolute inset-0 opacity-70"
+        />
+        <div className="relative mx-auto max-w-4xl">
+          <div className="font-mono flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-[var(--primary)]">
+            <span className="inline-block h-px w-6 bg-[var(--primary)]/60" />
             Control center
+            <span className="text-[var(--fg-ghost)]/80">· sheet 00</span>
           </div>
           <h1 className="font-display mt-2 text-[44px] leading-[1.04] tracking-tight">
             {userName ? `Hello, ${userName}.` : 'Hello.'}{' '}
             <span className="italic text-[var(--fg-muted)]">What should Hermes do?</span>
           </h1>
+          <div className="ink-rule mt-3 h-px w-28" />
 
           <div
             className={cn(
-              'mt-5 flex items-end gap-2 rounded-[var(--radius-lg)] border bg-[var(--surface)] p-3',
+              'tick-frame mt-5 flex items-end gap-2 rounded-[var(--radius-lg)] border bg-[var(--surface)] p-3',
               'transition-[box-shadow,border-color] duration-[var(--motion-dur-md)] ease-[var(--motion-ease-out)]',
               draft
                 ? 'border-[var(--primary)] shadow-[var(--shadow-md)]'
@@ -187,10 +195,13 @@ function CardShell({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="flex flex-col overflow-hidden">
+    <Card className="tick-frame group flex flex-col overflow-hidden">
       <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-5 py-3">
         <div className="flex items-center gap-2">
-          <span className="text-[var(--fg-dim)]">{icon}</span>
+          <span className="inline-block h-px w-3 bg-[var(--line-strong)] transition-colors group-hover:bg-[var(--primary)]" />
+          <span className="text-[var(--fg-dim)] transition-colors group-hover:text-[var(--primary)]">
+            {icon}
+          </span>
           <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--fg-muted)]">
             {title}
           </span>

@@ -30,11 +30,20 @@ export function StatusBar() {
   return (
     <footer
       className={cn(
-        'font-mono flex h-6 shrink-0 items-center justify-between border-t border-[var(--line)]',
+        'font-mono relative flex h-6 shrink-0 items-center justify-between border-t border-[var(--line)]',
         'bg-[var(--bg-raised)]/80 px-4 text-[10px] uppercase tracking-[0.18em] text-[var(--fg-ghost)]',
       )}
     >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute left-1 bottom-1 h-1.5 w-1.5 border-b border-l border-[var(--line-strong)] opacity-70"
+      />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute right-1 bottom-1 h-1.5 w-1.5 border-b border-r border-[var(--line-strong)] opacity-70"
+      />
       <div className="flex items-center gap-3">
+        <span className="text-[var(--primary)]/70">//</span>
         <Group>
           <Cell>mode · {mode}</Cell>
           <Sep />

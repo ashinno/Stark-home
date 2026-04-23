@@ -117,9 +117,12 @@ function CodeBlock({
   };
 
   return (
-    <div className="group/code relative my-3 overflow-hidden rounded-[var(--radius-md)] border border-[var(--line)] bg-[#0d1117]">
+    <div className="tick-frame group/code relative my-3 overflow-hidden rounded-[var(--radius-md)] border border-[var(--line)] bg-[#0d1117]">
       <div className="flex items-center justify-between border-b border-white/5 bg-black/20 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-white/50">
-        <span>{lang || 'text'}</span>
+        <div className="flex items-center gap-2">
+          <span className="inline-block h-px w-3 bg-[var(--primary)]/70" />
+          <span>{lang || 'text'}</span>
+        </div>
         <div className="flex items-center gap-1">
           {isHtml && (
             <button

@@ -98,6 +98,7 @@ export function ToolsPane() {
       <div className="border-b border-[var(--line)] px-8 py-5">
         <SectionHeading
           eyebrow="Tools"
+          stamp="sheet 03 · capabilities"
           title="What Hermes can do"
           description="Toggle the capabilities Hermes can use during a run."
         />
