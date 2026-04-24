@@ -25,7 +25,6 @@ import { relTime } from '../../lib/time';
 import type { Approval, Job, Suggestion, Thread } from '@shared/rpc';
 import { cn } from '../../lib/cn';
 import { StarkLoft } from '../../components/stark-loft/StarkLoft';
-import { FloatingMascot } from '../../components/FloatingMascot';
 
 export function HomePane() {
   const userName = useSession((s) => s.userName);
@@ -81,17 +80,10 @@ export function HomePane() {
           <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--primary)]">
             Control center
           </div>
-          <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2">
-            <h1 className="font-display text-[44px] leading-[1.04] tracking-tight">
-              {userName ? `Hello, ${userName}.` : 'Hello.'}{' '}
-              <span className="italic text-[var(--fg-muted)]">What should Stark do?</span>
-            </h1>
-            <div className="relative shrink-0" style={{ width: 180, height: 80 }}>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <FloatingMascot scale={2} radius={52} />
-              </div>
-            </div>
-          </div>
+          <h1 className="mt-2 font-display text-[44px] leading-[1.04] tracking-tight">
+            {userName ? `Hello, ${userName}.` : 'Hello.'}{' '}
+            <span className="italic text-[var(--fg-muted)]">What should Stark do?</span>
+          </h1>
 
           <div
             className={cn(
