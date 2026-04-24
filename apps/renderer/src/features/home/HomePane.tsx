@@ -24,17 +24,14 @@ import { call } from '../../lib/rpc';
 import { relTime } from '../../lib/time';
 import type { Approval, Job, Suggestion, Thread } from '@shared/rpc';
 import { cn } from '../../lib/cn';
-import { StarkHouse } from '../../components/StarkHouse';
 import { StarkLoft } from '../../components/stark-loft/StarkLoft';
 import { FloatingMascot } from '../../components/FloatingMascot';
-import { HomeDock } from './HomeDock';
 
 export function HomePane() {
   const userName = useSession((s) => s.userName);
   const appendMessage = useSession((s) => s.appendMessage);
   const resetThread = useSession((s) => s.resetThread);
   const setRoute = useSession((s) => s.setRoute);
-  const homeMode = useSession((s) => s.homeMode);
   const [draft, setDraft] = useState('');
 
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -69,17 +66,6 @@ export function HomePane() {
     appendMessage({ id: `u${Date.now()}`, role: 'user', content: text, createdAt: Date.now() });
     setRoute('threads');
   };
-
-  if (homeMode) {
-    return (
-      <div className="flex h-full overflow-hidden bg-[var(--bg)]">
-        <div className="min-w-0 flex-1">
-          <StarkHouse fullscreen />
-        </div>
-        <HomeDock mode="sidebar" />
-      </div>
-    );
-  }
 
   return (
     <div className="stark-bg flex h-full flex-col">

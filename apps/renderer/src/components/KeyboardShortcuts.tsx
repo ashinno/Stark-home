@@ -37,13 +37,6 @@ const GROUPS: Group[] = [
       { keys: ['/'], label: 'Slash commands (new, remember, brief, stop)' },
     ],
   },
-  {
-    title: 'Home mode',
-    items: [
-      { keys: ['Home mode toggle'], label: 'Fullscreen StarkHouse + floating dock' },
-      { keys: ['Click Stark'], label: 'Say hi' },
-    ],
-  },
 ];
 
 export function KeyboardShortcuts({ open, onClose }: { open: boolean; onClose: () => void }) {

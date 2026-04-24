@@ -1,4 +1,4 @@
-import { Sun, Moon, Monitor, Home } from 'lucide-react';
+import { Sun, Moon, Monitor } from 'lucide-react';
 import { Wordmark } from './Logo';
 import { Dot, Kbd } from './ui/Atoms';
 import { useSession } from '../stores/session';
@@ -9,16 +9,7 @@ import { ProfilePicker } from './ProfilePicker';
 export function TitleBar() {
   const sidecar = useSession((s) => s.sidecar);
   const setPaletteOpen = useSession((s) => s.setPaletteOpen);
-  const homeMode = useSession((s) => s.homeMode);
-  const setHomeMode = useSession((s) => s.setHomeMode);
-  const setRoute = useSession((s) => s.setRoute);
   const { theme, setTheme } = useTheme();
-
-  const onToggleHomeMode = () => {
-    // Turning home mode on only makes sense from the Home route.
-    if (!homeMode) setRoute('home');
-    setHomeMode(!homeMode);
-  };
 
   const tone =
     sidecar.state === 'ready' ? 'ok' : sidecar.state === 'error' ? 'bad' : 'warn';
@@ -52,45 +43,6 @@ export function TitleBar() {
         </button>
       </div>
       <div className="no-drag flex items-center gap-4">
-        <button
-          onClick={onToggleHomeMode}
-          role="switch"
-          aria-checked={homeMode}
-          aria-label="Home mode"
-          title={homeMode ? 'Home mode is on — switch off to return to the compact view' : 'Home mode is off — switch on for the fullscreen house + floating chat'}
-          className="font-mono no-drag group flex items-center gap-2 rounded-[var(--radius-sm)] border border-transparent px-1.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] transition-colors hover:border-[var(--line)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
-        >
-          <Home
-            className={cn(
-              'h-3 w-3 transition-colors',
-              homeMode ? 'text-[var(--primary)]' : 'text-[var(--fg-dim)] group-hover:text-[var(--fg-muted)]',
-            )}
-          />
-          <span className={cn('transition-colors', homeMode ? 'text-[var(--fg)]' : 'text-[var(--fg-muted)]')}>
-            home mode
-          </span>
-          <span
-            aria-hidden
-            className={cn(
-              'inline-flex h-4 w-8 shrink-0 items-center rounded-full p-0.5',
-              'transition-[background-color,box-shadow] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
-              homeMode
-                ? 'bg-[var(--primary)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08),0_0_12px_-3px_var(--primary-glow)]'
-                : 'bg-[var(--surface-3)] shadow-[inset_0_0_0_1px_var(--line)]',
-            )}
-          >
-            <span
-              className={cn(
-                'block h-3 w-3 rounded-full',
-                'shadow-[0_1px_2px_rgba(0,0,0,0.35),inset_0_-1px_0_rgba(0,0,0,0.08)]',
-                'transition-[transform,background-color] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-spring)]',
-                homeMode
-                  ? 'translate-x-[16px] bg-[var(--primary-ink)]'
-                  : 'translate-x-0 bg-white',
-              )}
-            />
-          </span>
-        </button>
         <ProfilePicker />
         <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--fg-muted)]">
           <Dot tone={tone} pulse={sidecar.state !== 'ready'} />

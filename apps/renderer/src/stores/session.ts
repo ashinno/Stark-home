@@ -51,7 +51,6 @@ type State = {
 
   // UI
   paletteOpen: boolean;
-  homeMode: boolean;
 
   // engine state (runtime installed?)
   engineInstalled: boolean | null;
@@ -80,26 +79,8 @@ type State = {
   resetThread: () => void;
   setActiveThreadId: (id: string | null) => void;
   setPaletteOpen: (v: boolean) => void;
-  setHomeMode: (v: boolean) => void;
-  toggleHomeMode: () => void;
   setEngineInstalled: (v: boolean) => void;
   setDaemon: (d: DaemonState | null) => void;
-};
-
-const HOME_MODE_KEY = 'stark.home_mode';
-const readHomeMode = () => {
-  try {
-    return localStorage.getItem(HOME_MODE_KEY) === '1';
-  } catch {
-    return false;
-  }
-};
-const writeHomeMode = (v: boolean) => {
-  try {
-    localStorage.setItem(HOME_MODE_KEY, v ? '1' : '0');
-  } catch {
-    /* ignore */
-  }
 };
 
 export const useSession = create<State>((set) => ({
@@ -118,7 +99,6 @@ export const useSession = create<State>((set) => ({
   streaming: false,
   activeThreadId: null,
   paletteOpen: false,
-  homeMode: readHomeMode(),
   engineInstalled: null,
   daemon: null,
 
@@ -194,16 +174,6 @@ export const useSession = create<State>((set) => ({
   resetThread: () => set({ messages: [], streaming: false, activeThreadId: null }),
   setActiveThreadId: (activeThreadId) => set({ activeThreadId }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
-  setHomeMode: (homeMode) => {
-    writeHomeMode(homeMode);
-    set({ homeMode });
-  },
-  toggleHomeMode: () =>
-    set((s) => {
-      const next = !s.homeMode;
-      writeHomeMode(next);
-      return { homeMode: next };
-    }),
   setEngineInstalled: (engineInstalled) => set({ engineInstalled }),
   setDaemon: (daemon) => set({ daemon }),
 }));
