@@ -25,6 +25,7 @@ import { relTime } from '../../lib/time';
 import type { Approval, Job, Suggestion, Thread } from '@shared/rpc';
 import { cn } from '../../lib/cn';
 import { StarkHouse } from '../../components/StarkHouse';
+import { StarkLoft } from '../../components/stark-loft/StarkLoft';
 import { FloatingMascot } from '../../components/FloatingMascot';
 import { HomeDock } from './HomeDock';
 
@@ -82,6 +83,12 @@ export function HomePane() {
 
   return (
     <div className="stark-bg flex h-full flex-col">
+      <section className="px-8 pt-8">
+        <div className="mx-auto max-w-6xl">
+          <StarkLoft />
+        </div>
+      </section>
+
       {/* Hero prompt */}
       <section className="relative px-8 pb-6 pt-10">
         <div className="mx-auto max-w-4xl">
