@@ -16,6 +16,9 @@ import {
   Sun,
   Moon,
   Terminal as TerminalIcon,
+  Download,
+  Upload,
+  RotateCcw,
 } from 'lucide-react';
 import { SectionHeading, Badge, Dot } from '../../components/ui/Atoms';
 import { Card } from '../../components/ui/Card';
@@ -34,7 +37,7 @@ import { cn } from '../../lib/cn';
 type Tab = 'doctor' | 'profiles' | 'providers' | 'gateways' | 'backends' | 'mcp' | 'account';
 
 const SETTINGS_TABS: readonly TabDef<Tab>[] = [
-  { id: 'doctor', label: 'Hermes Doctor', icon: Stethoscope },
+  { id: 'doctor', label: 'System Doctor', icon: Stethoscope },
   { id: 'profiles', label: 'Profiles', icon: Users },
   { id: 'providers', label: 'Providers', icon: Cpu },
   { id: 'gateways', label: 'Gateways', icon: Radio },
@@ -73,7 +76,7 @@ export function SettingsPane() {
   );
 }
 
-// ───────────── Hermes Doctor
+// ───────────── System Doctor
 
 function DoctorTab() {
   const [checks, setChecks] = useState<DoctorCheck[]>([]);
@@ -304,6 +307,172 @@ function ListWithAction({
   );
 }
 
+// ───────────── Backup & restore
+
+function BackupCard() {
+  const push = useToast((s) => s.push);
+  const [busy, setBusy] = useState<'export' | 'import' | 'reset' | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  async function exportAll() {
+    setBusy('export');
+    try {
+      const settings = await call<{ settings: Record<string, unknown> }>({ method: 'GET', path: '/settings' });
+      const notes = await call<{ notes: unknown[] }>({ method: 'GET', path: '/memory/notes' });
+      const payload = {
+        kind: 'stark-backup',
+        version: 1,
+        exported_at: new Date().toISOString(),
+        settings: settings.ok ? settings.data?.settings ?? {} : {},
+        memory_notes: notes.ok ? notes.data?.notes ?? [] : [],
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `stark-backup-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      push({ kind: 'success', title: 'Backup downloaded' });
+    } catch (e) {
+      push({ kind: 'error', title: 'Backup failed', description: String(e) });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function importAll(file: File) {
+    setBusy('import');
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (data.kind !== 'stark-backup' && data.kind !== 'hermes-backup') throw new Error('Not a Stark backup');
+      if (data.settings) {
+        await call({ method: 'PATCH', path: '/settings', body: data.settings });
+      }
+      if (Array.isArray(data.memory_notes)) {
+        for (const n of data.memory_notes) {
+          const text = (n as { text?: string }).text;
+          if (text) await call({ method: 'POST', path: '/memory/notes', body: { text } });
+        }
+      }
+      push({ kind: 'success', title: 'Backup restored', description: 'Reload to see changes' });
+    } catch (e) {
+      push({ kind: 'error', title: 'Restore failed', description: String(e) });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function factoryReset() {
+    setBusy('reset');
+    try {
+      const notes = await call<{ notes: { id: string }[] }>({ method: 'GET', path: '/memory/notes' });
+      if (notes.ok && notes.data) {
+        for (const n of notes.data.notes) {
+          await call({ method: 'DELETE', path: `/memory/notes/${n.id}` });
+        }
+      }
+      await call({
+        method: 'PATCH',
+        path: '/settings',
+        body: {
+          user_name: '',
+          setup_mode: 'simple',
+          safety_preset: 'balanced',
+          capabilities: ['files', 'web', 'memory'],
+          onboarded: false,
+        },
+      });
+      push({ kind: 'success', title: 'Reset complete', description: 'Reload to re-run onboarding' });
+    } catch (e) {
+      push({ kind: 'error', title: 'Reset failed', description: String(e) });
+    } finally {
+      setBusy(null);
+      setConfirmReset(false);
+    }
+  }
+
+  return (
+    <Card>
+      <div className="p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-display text-xl">Backup & restore</h3>
+            <p className="mt-1 text-[13px] text-[var(--fg-muted)]">
+              Export all settings and memory notes to a JSON file, or restore from one.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            loading={busy === 'export'}
+            leading={<Download className="h-3 w-3" />}
+            onClick={exportAll}
+          >
+            Export backup
+          </Button>
+          <label
+            className={cn(
+              'font-mono inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-[12px] uppercase tracking-[0.14em] text-[var(--fg)] transition-colors',
+              busy === 'import'
+                ? 'pointer-events-none opacity-60'
+                : 'cursor-pointer hover:border-[var(--primary)]/60 hover:bg-[var(--primary-wash)] hover:text-[var(--primary)]',
+            )}
+          >
+            <Upload className="h-3 w-3" />
+            Restore
+            <input
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void importAll(f);
+                e.target.value = '';
+              }}
+            />
+          </label>
+          {confirmReset ? (
+            <>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setConfirmReset(false)}
+                disabled={busy === 'reset'}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                loading={busy === 'reset'}
+                onClick={factoryReset}
+                className="!bg-[var(--bad)] hover:!bg-[var(--bad)]"
+              >
+                Confirm factory reset
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              leading={<RotateCcw className="h-3 w-3" />}
+              onClick={() => setConfirmReset(true)}
+            >
+              Factory reset…
+            </Button>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 // ───────────── Account & Theme
 
 function AccountTab() {
@@ -451,6 +620,8 @@ function AccountTab() {
         </div>
       </Card>
 
+      <BackupCard />
+
       {/* About */}
       <Card>
         <div className="flex items-center gap-4 p-6">
@@ -463,7 +634,7 @@ function AccountTab() {
               </p>
             )}
             <p className="mt-1 text-[13px] text-[var(--fg-muted)]">
-              A native Mac control center for the MIT-licensed <span className="italic">hermes-agent</span> by Nous Research.
+              A native Mac control center for local AI work.
             </p>
           </div>
           <Button variant="ghost" size="sm" onClick={() => setOnboarded(false)}>

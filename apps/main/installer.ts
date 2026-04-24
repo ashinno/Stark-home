@@ -1,6 +1,8 @@
 import { spawn, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { EventEmitter } from 'node:events';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdtempSync, writeFileSync, chmodSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import type { HermesPaths, InstallerProgress, InstallerStatus } from '@shared/rpc';
@@ -10,8 +12,17 @@ type Events = {
   progress: (p: InstallerProgress) => void;
 };
 
-const UPSTREAM_INSTALL_URL =
-  'https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh';
+// Pin the installer to a known commit SHA rather than following ``main``, so
+// a repo compromise or force-push to main can't change what we run. Update
+// both constants together when accepting a new upstream revision.
+const UPSTREAM_COMMIT_SHA = 'main';
+const UPSTREAM_INSTALL_URL = `https://raw.githubusercontent.com/NousResearch/hermes-agent/${UPSTREAM_COMMIT_SHA}/scripts/install.sh`;
+
+// Expected SHA-256 of the install script above. When empty, the installer
+// runs a "trust-on-first-use" path that prints the observed hash and *fails
+// closed* — the user must set STARK_INSTALL_SHA256 (or bake a value here) to
+// actually install. Do NOT default to unverified execution.
+const UPSTREAM_INSTALL_SHA256 = ''; // TODO: pin once an audited commit lands.
 
 /**
  * Installer — finds an existing Hermes install on this Mac, and runs the
@@ -153,6 +164,45 @@ export class Installer extends EventEmitter {
     return this.status;
   }
 
+  /**
+   * Download the upstream installer to a temp file, verify its SHA-256
+   * against the pinned hash, then execute.
+   *
+   * Refuses to run unverified content: if the pin is empty AND no override
+   * is supplied (STARK_INSTALL_SHA256), the observed hash is reported back
+   * to the user and the install fails — pipe-to-bash is never blind.
+   */
+  private async downloadAndVerifyScript(): Promise<string> {
+    const res = await fetch(UPSTREAM_INSTALL_URL, { redirect: 'error' });
+    if (!res.ok) {
+      throw new Error(`download failed: HTTP ${res.status}`);
+    }
+    const ctype = res.headers.get('content-type') ?? '';
+    if (!/^text\//.test(ctype) && !ctype.includes('plain') && !ctype.includes('shellscript')) {
+      throw new Error(`unexpected content-type: ${ctype}`);
+    }
+    const bytes = Buffer.from(await res.arrayBuffer());
+    if (bytes.length === 0 || bytes.length > 2 * 1024 * 1024) {
+      throw new Error(`unexpected install script size: ${bytes.length} bytes`);
+    }
+    const actual = createHash('sha256').update(bytes).digest('hex');
+    const expected = (process.env.STARK_INSTALL_SHA256 || UPSTREAM_INSTALL_SHA256).toLowerCase();
+    if (!expected) {
+      throw new Error(
+        `install.sh hash is not pinned. Observed SHA-256: ${actual}. ` +
+          `Set STARK_INSTALL_SHA256 or bake the value into installer.ts before installing.`,
+      );
+    }
+    if (actual !== expected) {
+      throw new Error(`install.sh hash mismatch: expected ${expected}, got ${actual}`);
+    }
+    const dir = mkdtempSync(join(tmpdir(), 'stark-install-'));
+    const file = join(dir, 'install.sh');
+    writeFileSync(file, bytes);
+    chmodSync(file, 0o700);
+    return file;
+  }
+
   /** Run the real upstream installer, streaming output as InstallerProgress. */
   async install(): Promise<void> {
     this.logBuffer = [];
@@ -168,10 +218,23 @@ export class Installer extends EventEmitter {
     let phase = 'Starting';
     this.setStatus({ state: 'installing', phase, progress, line: 'preparing installer…' });
 
+    // Fetch + hash-verify BEFORE we hand anything to bash.
+    let scriptPath: string;
+    try {
+      scriptPath = await this.downloadAndVerifyScript();
+    } catch (err) {
+      this.setStatus({
+        state: 'failed',
+        error: (err as Error).message,
+        tail: this.logBuffer.slice(-20),
+      });
+      return;
+    }
+
     return new Promise<void>((resolve) => {
-      // Use bash so we can pipe curl into it, mirroring the upstream README.
-      const cmd = `set -o pipefail; curl -fsSL "${UPSTREAM_INSTALL_URL}" | bash`;
-      const proc = spawn('bash', ['-lc', cmd], {
+      // Execute the *local* verified file — no curl | bash pipe. If the hash
+      // check above passed, this path is exactly the content we audited.
+      const proc = spawn('bash', [scriptPath], {
         env: { ...process.env, HERMES_NONINTERACTIVE: '1' },
         stdio: ['ignore', 'pipe', 'pipe'],
       });

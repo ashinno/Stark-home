@@ -2,9 +2,14 @@ import type { ReactNode } from 'react';
 import { cn } from '../../lib/cn';
 import { Skeleton } from './Skeleton';
 
-export function Kbd({ children }: { children: ReactNode }) {
+export function Kbd({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <kbd className="font-mono inline-flex items-center rounded-[var(--radius-xs)] border border-[var(--line)] bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] text-[var(--fg-muted)]">
+    <kbd
+      className={cn(
+        'font-mono inline-flex h-[18px] shrink-0 items-center justify-center rounded-[var(--radius-xs)] border border-[var(--line)] bg-[var(--surface-2)] px-1.5 text-[10px] leading-none tracking-[0.02em] text-[var(--fg-muted)]',
+        className,
+      )}
+    >
       {children}
     </kbd>
   );

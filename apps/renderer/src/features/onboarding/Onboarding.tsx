@@ -199,7 +199,7 @@ function Rail({ step, total }: { step: number; total: number }) {
         <span
           key={i}
           className={cn(
-            'h-[3px] rounded-full transition-all duration-500',
+            'h-[3px] rounded-full transition-[background-color,width] duration-[var(--motion-dur-lg)] ease-[var(--motion-ease-out)]',
             i < step
               ? 'w-4 bg-[var(--primary)]'
               : i === step
@@ -268,7 +268,7 @@ function StepWelcome({ onNext }: { onNext: () => void }) {
         <Logo size={60} />
       </div>
       <h1 className="font-display text-[52px] leading-[1.02] tracking-tight">
-        Hermes is your AI operator for Mac.
+        Stark is your AI operator for Mac.
       </h1>
       <p className="mx-auto mt-4 max-w-xl text-[15px] text-[var(--fg-muted)]">
         Stark is the native control center. Install the engine, connect a model, grant only what you're comfortable with.
@@ -321,8 +321,8 @@ function StepInstall({
       <Eyebrow icon={<Download className="h-3 w-3" />}>Install</Eyebrow>
       <h2 className="font-display mt-2 text-[36px] leading-[1.05]">
         {installed
-          ? 'Hermes is already on this Mac.'
-          : 'Let Stark install the Hermes engine.'}
+          ? 'The engine is already on this Mac.'
+          : 'Let Stark install the local engine.'}
       </h2>
       <p className="mt-2 text-sm text-[var(--fg-muted)]">
         {installed
@@ -330,7 +330,7 @@ function StepInstall({
           : (
             <>
               Stark runs the upstream installer into{' '}
-              <span className="font-mono">~/.hermes/</span> and points the bridge at it. Nothing leaves this Mac.
+              the local app data directory and points the bridge at it. Nothing leaves this Mac.
             </>
           )}
       </p>
@@ -346,13 +346,13 @@ function StepInstall({
         {status.state === 'needs-install' && (
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm font-medium">No Hermes install detected.</div>
+              <div className="text-sm font-medium">No engine install detected.</div>
               <div className="mt-0.5 text-[12.5px] text-[var(--fg-muted)]">
                 Stark will run the official installer — takes under a minute.
               </div>
             </div>
             <Button variant="primary" leading={<Download className="h-3.5 w-3.5" />} onClick={onStart}>
-              Install Hermes
+              Install engine
             </Button>
           </div>
         )}
@@ -455,7 +455,7 @@ function StepMode({
             key={m.id}
             onClick={() => onChange(m.id)}
             className={cn(
-              'rounded-[var(--radius-md)] border p-5 text-left transition-all',
+              'rounded-[var(--radius-md)] border p-5 text-left transition-[background-color,border-color,color,box-shadow,transform] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
               value === m.id
                 ? 'border-[var(--primary)] bg-[var(--primary-wash)]'
                 : 'border-[var(--line)] bg-[var(--surface-2)] hover:border-[var(--line-strong)]',
@@ -502,7 +502,7 @@ function StepProvider({
   onNext: () => void;
 }) {
   const opts = [
-    { id: 'nous' as const, title: 'Nous Portal', desc: 'Recommended. Hermes-tuned models with 128K context.', recommended: true },
+    { id: 'nous' as const, title: 'Nous Portal', desc: 'Recommended models with 128K context.', recommended: true },
     { id: 'byok' as const, title: 'Bring your own API key', desc: 'OpenAI, Anthropic, Google — your billing, your key.' },
     { id: 'openrouter' as const, title: 'OpenRouter', desc: '200+ models routed behind one key.' },
     { id: 'local' as const, title: 'Local or custom endpoint', desc: 'Ollama, LM Studio, llama.cpp, or any OpenAI-compatible URL.' },
@@ -512,7 +512,7 @@ function StepProvider({
       <Eyebrow icon={<Cpu className="h-3 w-3" />}>Model provider</Eyebrow>
       <h2 className="font-display mt-2 text-[36px] leading-[1.05]">Who powers the agent?</h2>
       <p className="mt-2 text-sm text-[var(--fg-muted)]">
-        Hermes needs a model with at least 64K context. We'll verify your choice in the next step.
+        Stark needs a model with at least 64K context. We'll verify your choice in the next step.
       </p>
       <div className="stagger mt-6 grid gap-2">
         {opts.map((o) => (
@@ -520,7 +520,7 @@ function StepProvider({
             key={o.id}
             onClick={() => onChange(o.id)}
             className={cn(
-              'flex items-start justify-between gap-4 rounded-[var(--radius-md)] border p-4 text-left transition-all',
+              'flex items-start justify-between gap-4 rounded-[var(--radius-md)] border p-4 text-left transition-[background-color,border-color,color,box-shadow,transform] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
               value === o.id
                 ? 'border-[var(--primary)] bg-[var(--primary-wash)]'
                 : 'border-[var(--line)] bg-[var(--surface-2)] hover:border-[var(--line-strong)]',
@@ -546,7 +546,7 @@ function StepProvider({
       </div>
       {value === 'byok' && (
         <div className="mt-5 anim-in">
-          <Field label="API key" hint="stored locally in ~/.hermes/.env">
+          <Field label="API key" hint="stored locally">
             <Input
               leading={<KeyRound className="h-3.5 w-3.5" />}
               type="password"
@@ -610,7 +610,7 @@ function StepVerify({
 
   const rows: { k: VerifyKey; label: string; detail: string }[] = [
     { k: 'connected', label: 'Model connected', detail: 'We opened a connection to the provider.' },
-    { k: 'context', label: 'Context window ≥ 64K', detail: 'Hermes needs room to think. We checked the limit.' },
+    { k: 'context', label: 'Context window ≥ 64K', detail: 'Stark needs room to think. We checked the limit.' },
     { k: 'first', label: 'First response', detail: 'The model answered a test prompt.' },
     { k: 'tool', label: 'Tool call works', detail: 'Function-calling roundtrip succeeded.' },
   ];
@@ -709,8 +709,8 @@ function StepCaps({
     { id: 'web', title: 'Web search', icon: Search, enables: 'Search the web for citations.', access: 'Outbound HTTPS.', needsApproval: false },
     { id: 'memory', title: 'Memory', icon: Brain, enables: 'Remember context across sessions.', access: '~/Library.', needsApproval: false },
     { id: 'automations', title: 'Automations', icon: CalendarClock, enables: 'Scheduled jobs and briefs.', access: 'Cron + local tools.', needsApproval: false },
-    { id: 'messaging', title: 'Messaging gateway', icon: Radio, enables: 'Reach Hermes from chat apps.', access: 'Tokens you configure.', needsApproval: true },
-    { id: 'voice', title: 'Voice', icon: Mic, enables: 'Speak to Hermes, hear replies.', access: 'Microphone + speakers.', needsApproval: true },
+    { id: 'messaging', title: 'Messaging gateway', icon: Radio, enables: 'Reach Stark from chat apps.', access: 'Tokens you configure.', needsApproval: true },
+    { id: 'voice', title: 'Voice', icon: Mic, enables: 'Speak to Stark, hear replies.', access: 'Microphone + speakers.', needsApproval: true },
   ];
 
   // auto-include sane defaults when switching modes
@@ -731,7 +731,7 @@ function StepCaps({
   return (
     <div className="px-10 py-10">
       <Eyebrow icon={<ShieldCheck className="h-3 w-3" />}>Capabilities</Eyebrow>
-      <h2 className="font-display mt-2 text-[36px] leading-[1.05]">What should Hermes be allowed to do?</h2>
+      <h2 className="font-display mt-2 text-[36px] leading-[1.05]">What should Stark be allowed to do?</h2>
       <p className="mt-2 text-sm text-[var(--fg-muted)]">
         Each capability can be toggled later. Items marked <span className="font-mono text-[var(--accent-signal)]">approval</span> ask before the risky action.
       </p>
@@ -743,7 +743,7 @@ function StepCaps({
               key={c.id}
               onClick={() => toggle(c.id)}
               className={cn(
-                'rounded-[var(--radius-md)] border p-4 text-left transition-all',
+                'rounded-[var(--radius-md)] border p-4 text-left transition-[background-color,border-color,color,box-shadow,transform] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
                 on
                   ? 'border-[var(--primary)] bg-[var(--primary-wash)]'
                   : 'border-[var(--line)] bg-[var(--surface-2)] hover:border-[var(--line-strong)]',
@@ -821,7 +821,7 @@ function StepSafety({
             key={o.id}
             onClick={() => onChange(o.id)}
             className={cn(
-              'flex items-start justify-between gap-4 rounded-[var(--radius-md)] border p-4 text-left transition-all',
+              'flex items-start justify-between gap-4 rounded-[var(--radius-md)] border p-4 text-left transition-[background-color,border-color,color,box-shadow,transform] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
               value === o.id
                 ? 'border-[var(--primary)] bg-[var(--primary-wash)]'
                 : 'border-[var(--line)] bg-[var(--surface-2)] hover:border-[var(--line-strong)]',
@@ -846,7 +846,7 @@ function StepSafety({
 function StepFirstWin({ busy, onFinish }: { busy: boolean; onFinish: (prompt?: string) => void }) {
   const prompts = [
     'Summarize what is in my current working folder.',
-    'Explain what Hermes can do on this Mac in plain language.',
+    'Explain what Stark can do on this Mac in plain language.',
     'Create a daily brief automation that runs at 8am.',
     'Analyze my Downloads folder and suggest what to archive.',
     'Walk me through setting up Telegram access.',

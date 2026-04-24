@@ -18,7 +18,16 @@ type Route =
   | 'memory'
   | 'gateways'
   | 'activity'
+  | 'system'
   | 'settings';
+
+export type DaemonState = {
+  warmProfiles: string[];
+  warmingProfiles: string[];
+  coldStartInFlight: boolean;
+  lastPrewarmAt: number | null;
+  lastPrewarmError: string | null;
+};
 
 type State = {
   route: Route;
@@ -44,6 +53,12 @@ type State = {
   paletteOpen: boolean;
   homeMode: boolean;
 
+  // engine state (runtime installed?)
+  engineInstalled: boolean | null;
+
+  // daemon/ACP warm state (polled from /daemon/status)
+  daemon: DaemonState | null;
+
   // setters
   setRoute: (r: Route) => void;
   setSidecar: (s: SidecarStatus) => void;
@@ -59,6 +74,7 @@ type State = {
   setOnboarded: (v: boolean) => void;
   appendMessage: (m: ChatMessage) => void;
   updateLastAssistantMessage: (fn: (m: ChatMessage) => ChatMessage) => void;
+  markLastUserError: (err: string | null) => void;
   patchAssistantDelta: (delta: string) => void;
   setStreaming: (v: boolean) => void;
   resetThread: () => void;
@@ -66,6 +82,8 @@ type State = {
   setPaletteOpen: (v: boolean) => void;
   setHomeMode: (v: boolean) => void;
   toggleHomeMode: () => void;
+  setEngineInstalled: (v: boolean) => void;
+  setDaemon: (d: DaemonState | null) => void;
 };
 
 const HOME_MODE_KEY = 'stark.home_mode';
@@ -101,6 +119,8 @@ export const useSession = create<State>((set) => ({
   activeThreadId: null,
   paletteOpen: false,
   homeMode: readHomeMode(),
+  engineInstalled: null,
+  daemon: null,
 
   setRoute: (route) => set({ route }),
   setSidecar: (sidecar) => set({ sidecar }),
@@ -123,15 +143,15 @@ export const useSession = create<State>((set) => ({
   updateLastAssistantMessage: (fn) =>
     set((s) => {
       const msgs = [...s.messages];
-      for (let i = msgs.length - 1; i >= 0; i--) {
-        if (msgs[i].role === 'assistant') {
-          msgs[i] = fn(msgs[i]);
-          return { messages: msgs };
-        }
+      const last = msgs[msgs.length - 1];
+      // Only mutate an existing assistant message when it's the tail of the
+      // thread (i.e. the one the current stream is building). Otherwise we'd
+      // attach new action cards / tokens to a historical reply from a resumed
+      // thread — which looks to the user like the agent never responded.
+      if (last && last.role === 'assistant') {
+        msgs[msgs.length - 1] = fn(last);
+        return { messages: msgs };
       }
-      // No assistant message yet — create a placeholder so action cards have
-      // a home before the first token arrives. Otherwise events emitted
-      // before streaming (the "Hermes is thinking…" card) get dropped.
       const placeholder: ChatMessage = {
         id: `m${Date.now()}`,
         role: 'assistant',
@@ -141,6 +161,17 @@ export const useSession = create<State>((set) => ({
       };
       msgs.push(fn(placeholder));
       return { messages: msgs };
+    }),
+  markLastUserError: (err) =>
+    set((s) => {
+      const msgs = [...s.messages];
+      for (let i = msgs.length - 1; i >= 0; i--) {
+        if (msgs[i].role === 'user') {
+          msgs[i] = { ...msgs[i], error: err ?? undefined };
+          return { messages: msgs };
+        }
+      }
+      return {};
     }),
   patchAssistantDelta: (delta) =>
     set((s) => {
@@ -173,6 +204,8 @@ export const useSession = create<State>((set) => ({
       writeHomeMode(next);
       return { homeMode: next };
     }),
+  setEngineInstalled: (engineInstalled) => set({ engineInstalled }),
+  setDaemon: (daemon) => set({ daemon }),
 }));
 
 export type { Route };

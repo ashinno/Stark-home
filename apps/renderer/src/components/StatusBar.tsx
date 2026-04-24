@@ -5,10 +5,23 @@ import { cn } from '../lib/cn';
 export function StatusBar() {
   const sidecar = useSession((s) => s.sidecar);
   const codex = useSession((s) => s.codex);
+  const engineInstalled = useSession((s) => s.engineInstalled);
+  const daemon = useSession((s) => s.daemon);
   const provider = useSession((s) => s.activeProvider);
   const profile = useSession((s) => s.activeProfile);
   const mode = useSession((s) => s.setupMode);
   const safety = useSession((s) => s.safetyPreset);
+
+  const activeProfileKey = profile || 'default';
+  const activeProfileWarm = daemon?.warmProfiles.includes(activeProfileKey) ?? false;
+  const engineState: 'stub' | 'warming' | 'live' =
+    engineInstalled === false
+      ? 'stub'
+      : activeProfileWarm && !daemon?.coldStartInFlight
+        ? 'live'
+        : 'warming';
+  const engineTone: 'ok' | 'warn' =
+    engineState === 'live' ? 'ok' : 'warn';
 
   const ready = sidecar.state === 'ready';
   const bridgeTone = ready ? 'ok' : sidecar.state === 'error' ? 'bad' : 'warn';
@@ -51,6 +64,29 @@ export function StatusBar() {
           )}
           <Sep />
           <Cell>{codexLabel}</Cell>
+          {engineInstalled !== null && (
+            <>
+              <Sep />
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1',
+                  engineTone === 'ok' ? 'text-[var(--ok)]' : 'text-[var(--warn)]',
+                )}
+                title={
+                  engineState === 'warming'
+                    ? daemon?.lastPrewarmError
+                      ? `Last prewarm error: ${daemon.lastPrewarmError}`
+                      : `Warming ${activeProfileKey}…`
+                    : engineState === 'live'
+                      ? `Engine warm for ${activeProfileKey}`
+                      : 'Engine not installed — running on stub'
+                }
+              >
+                <Dot tone={engineTone} pulse={engineState === 'warming'} />
+                engine · {engineState}
+              </span>
+            </>
+          )}
         </Group>
       </div>
       <div key={bridgeLabel} className="anim-in flex items-center gap-1.5">

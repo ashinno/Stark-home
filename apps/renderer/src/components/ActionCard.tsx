@@ -14,6 +14,7 @@ import {
   AlertOctagon,
   ShieldCheck,
   Brain,
+  Wrench,
 } from 'lucide-react';
 import type { Action, ActionKind } from '@shared/rpc';
 import { cn } from '../lib/cn';
@@ -33,6 +34,7 @@ const META: Record<ActionKind, { label: string; Icon: typeof FileText; verb: str
   scheduling: { label: 'Scheduling', Icon: CalendarClock, verb: 'Scheduling' },
   messaging: { label: 'Messaging', Icon: MessageCircle, verb: 'Sending' },
   delegating: { label: 'Delegating', Icon: Share2, verb: 'Delegating' },
+  tool: { label: 'Tool', Icon: Wrench, verb: 'Running' },
 };
 
 /**
@@ -48,7 +50,7 @@ export function ActionCard({
   onApprove?: (id: string) => void;
   onDeny?: (id: string) => void;
 }) {
-  const { Icon, label } = META[action.kind];
+  const { Icon, label } = META[action.kind] ?? META.tool;
   const needsApproval = action.status === 'needs-approval';
   const running = action.status === 'running';
   const failed = action.status === 'failed';

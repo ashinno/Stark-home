@@ -97,7 +97,8 @@ export type ActionKind =
   | 'writing-memory'
   | 'scheduling'
   | 'messaging'
-  | 'delegating';
+  | 'delegating'
+  | 'tool';
 
 export type Action = {
   id: string;
@@ -117,9 +118,11 @@ export type ChatMessage = {
   content: string;
   createdAt: number;
   actions?: Action[];
+  error?: string;
 };
 
 export type StreamChunk =
+  | { type: 'session'; sessionId: string }
   | { type: 'token'; delta: string }
   | { type: 'action'; action: Action }
   | { type: 'action-update'; id: string; patch: Partial<Action> }

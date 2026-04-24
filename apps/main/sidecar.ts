@@ -19,6 +19,12 @@ export class SidecarManager extends EventEmitter {
   private proc: ChildProcess | null = null;
   private port: number | null = null;
   private token = '';
+  // A second per-launch secret that marks "this request came from the
+  // Electron renderer, not an agent child". Strong-gates mutating endpoints
+  // so a compromised skill — which inevitably has the bearer token because
+  // it must authenticate at all — still can't rewrite config or install
+  // more skills.
+  private rendererOrigin = '';
   private status: SidecarStatus = { state: 'stopped' };
   private crashCount = 0;
   private crashWindowStart = 0;
@@ -56,6 +62,7 @@ export class SidecarManager extends EventEmitter {
     if (this.proc) return;
     this.setStatus({ state: 'starting' });
     this.token = randomBytes(32).toString('hex');
+    this.rendererOrigin = randomBytes(32).toString('hex');
 
     const { bin, module } = this.resolvePython();
     if (!existsSync(bin) && app.isPackaged) {
@@ -68,6 +75,7 @@ export class SidecarManager extends EventEmitter {
     const env: NodeJS.ProcessEnv = {
       ...process.env,
       STARK_TOKEN: this.token,
+      STARK_RENDERER_ORIGIN: this.rendererOrigin,
       STARK_DATA_DIR: join(app.getPath('userData'), 'data'),
       HEARTH_TOKEN: this.token,
       HEARTH_DATA_DIR: join(app.getPath('userData'), 'data'),
@@ -156,6 +164,7 @@ export class SidecarManager extends EventEmitter {
         headers: {
           'content-type': 'application/json',
           authorization: `Bearer ${this.token}`,
+          'x-stark-origin': this.rendererOrigin,
         },
         body: req.body === undefined ? undefined : JSON.stringify(req.body),
         signal: controller.signal,
@@ -188,6 +197,7 @@ export class SidecarManager extends EventEmitter {
         'content-type': 'application/json',
         accept: 'text/event-stream',
         authorization: `Bearer ${this.token}`,
+        'x-stark-origin': this.rendererOrigin,
       },
       body: req.body === undefined ? undefined : JSON.stringify(req.body),
     });

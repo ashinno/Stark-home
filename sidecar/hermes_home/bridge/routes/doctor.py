@@ -46,7 +46,7 @@ async def run_checks() -> dict:
     checks = [
         {
             "id": "engine",
-            "label": "Hermes engine installed",
+            "label": "Stark engine installed",
             "state": engine_state,
             "note": engine_note,
         },
@@ -64,13 +64,13 @@ async def run_checks() -> dict:
         },
         {
             "id": "launcher",
-            "label": "hermes launcher on PATH",
+            "label": "engine launcher on PATH",
             "state": "ok" if paths and paths.launcher_bin else "warn",
             "note": str(paths.launcher_bin) if paths and paths.launcher_bin else "Not on PATH",
         },
         {
             "id": "venv",
-            "label": "Hermes Python venv",
+            "label": "Engine Python venv",
             "state": "ok" if paths and paths.python_bin else "warn",
             "note": str(paths.python_bin) if paths and paths.python_bin else "Not found",
         },
@@ -100,7 +100,7 @@ async def run_checks() -> dict:
         },
         {
             "id": "bridge",
-            "label": "Stark ↔ Hermes bridge",
+            "label": "Stark bridge",
             "state": "ok",
             "note": "loopback, token-auth",
         },

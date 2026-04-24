@@ -47,7 +47,7 @@ export function TitleBar() {
             'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
           )}
         >
-          <span className="opacity-80">What should Hermes do?</span>
+          <span className="opacity-80">What should Stark do?</span>
           <Kbd>⌘⇧␣</Kbd>
         </button>
       </div>
@@ -72,20 +72,21 @@ export function TitleBar() {
           <span
             aria-hidden
             className={cn(
-              'relative inline-block h-4 w-8 shrink-0 rounded-full',
+              'inline-flex h-4 w-8 shrink-0 items-center rounded-full p-0.5',
               'transition-[background-color,box-shadow] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
               homeMode
-                ? 'bg-[var(--primary)] shadow-[0_0_12px_-2px_var(--primary-glow)]'
-                : 'bg-[var(--surface-3)]',
+                ? 'bg-[var(--primary)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08),0_0_12px_-3px_var(--primary-glow)]'
+                : 'bg-[var(--surface-3)] shadow-[inset_0_0_0_1px_var(--line)]',
             )}
           >
             <span
               className={cn(
-                'absolute top-0.5 h-3 w-3 rounded-full shadow-sm',
+                'block h-3 w-3 rounded-full',
+                'shadow-[0_1px_2px_rgba(0,0,0,0.35),inset_0_-1px_0_rgba(0,0,0,0.08)]',
                 'transition-[transform,background-color] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-spring)]',
                 homeMode
-                  ? 'translate-x-[18px] bg-[var(--primary-ink)]'
-                  : 'translate-x-0.5 bg-white',
+                  ? 'translate-x-[16px] bg-[var(--primary-ink)]'
+                  : 'translate-x-0 bg-white',
               )}
             />
           </span>

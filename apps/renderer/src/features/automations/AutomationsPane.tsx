@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Dialog } from '../../components/ui/Dialog';
 import { Field, Input } from '../../components/ui/Input';
 import { useToast } from '../../components/ui/Toast';
+import { confirmDelete } from '../../lib/confirmDelete';
 import { call } from '../../lib/rpc';
 import { relTime } from '../../lib/time';
 
@@ -46,9 +47,25 @@ export function AutomationsPane() {
     push({ kind: 'success', title: 'Queued' });
     await load();
   }
-  async function remove(id: string) {
-    await call({ method: 'DELETE', path: `/scheduler/${id}` });
-    await load();
+  function remove(id: string) {
+    const prior = tasks.find((t) => t.id === id);
+    if (!prior) return;
+    confirmDelete({
+      label: 'Automation',
+      description: prior.name,
+      onDelete: async () => {
+        setTasks((ts) => ts.filter((t) => t.id !== id));
+        await call({ method: 'DELETE', path: `/scheduler/${id}` });
+      },
+      onUndo: async () => {
+        await call({
+          method: 'POST',
+          path: '/scheduler',
+          body: { name: prior.name, nl: prior.nl, delivery: prior.delivery },
+        });
+        await load();
+      },
+    });
   }
 
   return (
@@ -57,7 +74,7 @@ export function AutomationsPane() {
         <SectionHeading
           eyebrow="Automations"
           title="Work that runs on a rhythm"
-          description="Describe it in plain English. Hermes turns it into a cron, delivery, and run history."
+          description="Describe it in plain English. Stark turns it into a schedule, delivery, and run history."
         />
         <Button variant="primary" leading={<Plus className="h-3.5 w-3.5" />} onClick={() => setCreating(true)}>
           New automation
@@ -114,7 +131,9 @@ export function AutomationsPane() {
                     </Button>
                     <button
                       onClick={() => remove(t.id)}
-                      className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] text-[var(--fg-dim)] hover:bg-[var(--bad-wash)] hover:text-[var(--bad)]"
+                      aria-label={`Delete ${t.name}`}
+                      title="Delete"
+                      className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] text-[var(--fg-dim)] transition-colors hover:bg-[var(--bad-wash)] hover:text-[var(--bad)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -166,7 +185,7 @@ function CreateTaskDialog({ onClose, onCreated }: { onClose: () => void; onCreat
     onClose();
   }
   return (
-    <Dialog open onClose={onClose} title="Schedule something" description="Plain English works. Hermes picks the cron.">
+    <Dialog open onClose={onClose} title="Schedule something" description="Plain English works. Stark picks the schedule.">
       <div className="space-y-4">
         <Field label="Name">
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Morning brief" autoFocus />

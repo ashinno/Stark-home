@@ -15,15 +15,21 @@ from pydantic import BaseModel
 
 from .. import gateway_probe, hermes_cli
 from ..store import get_store
+from ..subprocess_env import sanitized_env
+from ..validation import safe_profile
 
 router = APIRouter(prefix="/gateways", tags=["gateways"])
 
 
 def _resolve_profile(profile: str | None) -> str | None:
     if profile is not None:
-        return profile
+        return safe_profile(profile)
     settings = get_store().read("settings") or {}
-    return settings.get("active_profile")
+    stored = settings.get("active_profile")
+    try:
+        return safe_profile(stored)
+    except Exception:
+        return None
 
 
 @router.get("")
@@ -74,13 +80,13 @@ async def start(name: str, profile: str | None = Query(default=None)) -> dict[st
     prof = _resolve_profile(profile)
     bin_ = hermes_cli.cli_path()
     if not bin_:
-        raise HTTPException(503, "hermes CLI not available")
+        raise HTTPException(503, "Engine CLI is not available")
     args = [bin_]
     if prof and prof != "default":
         args += ["-p", prof]
     args += ["gateway", "restart"]
     try:
-        out = subprocess.run(args, capture_output=True, text=True, timeout=20)
+        out = subprocess.run(args, capture_output=True, text=True, timeout=20, env=sanitized_env())
     except Exception as e:
         raise HTTPException(500, f"restart failed: {e}")
     return {
@@ -97,13 +103,13 @@ async def stop(name: str, profile: str | None = Query(default=None)) -> dict[str
     prof = _resolve_profile(profile)
     bin_ = hermes_cli.cli_path()
     if not bin_:
-        raise HTTPException(503, "hermes CLI not available")
+        raise HTTPException(503, "Engine CLI is not available")
     args = [bin_]
     if prof and prof != "default":
         args += ["-p", prof]
     args += ["gateway", "stop"]
     try:
-        out = subprocess.run(args, capture_output=True, text=True, timeout=15)
+        out = subprocess.run(args, capture_output=True, text=True, timeout=15, env=sanitized_env())
     except Exception as e:
         raise HTTPException(500, f"stop failed: {e}")
     return {

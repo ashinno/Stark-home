@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Input, Textarea, Field } from '../../components/ui/Input';
 import { Dialog } from '../../components/ui/Dialog';
 import { useToast } from '../../components/ui/Toast';
+import { confirmDelete } from '../../lib/confirmDelete';
 import { call } from '../../lib/rpc';
 import { relTime } from '../../lib/time';
 import { useSession } from '../../stores/session';
@@ -52,9 +53,22 @@ export function MemoryPane() {
     ? sessions.filter((s) => (s.title + ' ' + s.preview).toLowerCase().includes(q.toLowerCase()))
     : sessions;
 
-  async function deleteNote(id: string) {
-    await call({ method: 'DELETE', path: `/memory/notes/${id}` });
-    await loadAll();
+  function deleteNote(id: string) {
+    const prior = notes.find((n) => n.id === id);
+    if (!prior) return;
+    confirmDelete({
+      label: 'Note',
+      description: prior.text.slice(0, 60),
+      onDelete: async () => {
+        setNotes((ns) => ns.filter((n) => n.id !== id));
+        await call({ method: 'DELETE', path: `/memory/notes/${id}` });
+      },
+      onUndo: async () => {
+        setNotes((ns) => [...ns, prior]);
+        await call({ method: 'POST', path: '/memory/notes', body: { text: prior.text } });
+        await loadAll();
+      },
+    });
   }
 
   function openSession(sid: string) {
@@ -68,7 +82,7 @@ export function MemoryPane() {
         <div className="flex items-end justify-between gap-6">
           <SectionHeading
             eyebrow="Memory"
-            title="What Hermes remembers"
+            title="What Stark remembers"
             description="Real sessions across this profile, plus pinned notes that surface in every conversation."
           />
           <div className="w-72">
@@ -97,7 +111,7 @@ export function MemoryPane() {
                 description={
                   q
                     ? 'Try a different phrase.'
-                    : 'Conversations will appear here as you talk with Hermes.'
+                    : 'Conversations will appear here as you talk with Stark.'
                 }
               />
             ) : (
@@ -161,7 +175,8 @@ export function MemoryPane() {
                       <Pin className="h-3 w-3 text-[var(--accent-signal)]" />
                       <button
                         onClick={() => void deleteNote(n.id)}
-                        className="text-[10px] uppercase tracking-[0.15em] text-[var(--fg-ghost)] opacity-0 transition-opacity hover:text-[var(--bad)] group-hover:opacity-100"
+                        aria-label="Delete note"
+                        className="rounded-[var(--radius-xs)] text-[10px] uppercase tracking-[0.15em] text-[var(--fg-ghost)] opacity-0 transition-opacity hover:text-[var(--bad)] group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
                       >
                         forget
                       </button>
@@ -192,7 +207,7 @@ function AddNoteDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () 
   const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
   return (
-    <Dialog open onClose={onClose} title="Pin a memory" description="Hermes will see this in every session.">
+    <Dialog open onClose={onClose} title="Pin a memory" description="Stark will use this in every session.">
       <Field label="Memory">
         <Textarea
           rows={4}

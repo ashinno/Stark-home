@@ -61,12 +61,14 @@ def _resolve_launcher() -> Path | None:
 
 def _version_from(launcher: Path) -> str | None:
     try:
+        from .subprocess_env import sanitized_env
         out = subprocess.run(
             [str(launcher), "--version"],
             capture_output=True,
             timeout=4,
             check=False,
             text=True,
+            env=sanitized_env(),
         )
         text = (out.stdout or "") + "\n" + (out.stderr or "")
         m = re.search(r"v?(\d+\.\d+\.\d+)", text)

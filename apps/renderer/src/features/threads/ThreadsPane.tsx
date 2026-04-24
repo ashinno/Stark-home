@@ -7,9 +7,13 @@ import {
   Search,
   Pin,
   Trash2,
+  RefreshCw,
+  AlertCircle,
+  Download,
 } from 'lucide-react';
 import { useSession } from '../../stores/session';
 import { call, stream } from '../../lib/rpc';
+import { refreshDaemonStatus } from '../../lib/daemon';
 import { cn } from '../../lib/cn';
 import type { Action, ChatMessage, Thread } from '@shared/rpc';
 import { Button } from '../../components/ui/Button';
@@ -19,6 +23,7 @@ import { useToast } from '../../components/ui/Toast';
 import { ActionCard } from '../../components/ActionCard';
 import { Input } from '../../components/ui/Input';
 import { relTime } from '../../lib/time';
+import { downloadThread, copyThread } from '../../lib/export';
 
 const SLASH = [
   { cmd: '/new', desc: 'Start a fresh session' },
@@ -31,11 +36,14 @@ export function ThreadsPane() {
   const messages = useSession((s) => s.messages);
   const streaming = useSession((s) => s.streaming);
   const sidecar = useSession((s) => s.sidecar);
+  const engineInstalled = useSession((s) => s.engineInstalled);
+  const setRoute = useSession((s) => s.setRoute);
   const activeProvider = useSession((s) => s.activeProvider);
   const activeProfile = useSession((s) => s.activeProfile);
   const append = useSession((s) => s.appendMessage);
   const update = useSession((s) => s.updateLastAssistantMessage);
   const patch = useSession((s) => s.patchAssistantDelta);
+  const markLastUserError = useSession((s) => s.markLastUserError);
   const setStreaming = useSession((s) => s.setStreaming);
   const reset = useSession((s) => s.resetThread);
   const userName = useSession((s) => s.userName);
@@ -77,8 +85,16 @@ export function ThreadsPane() {
   }, [draft]);
 
   // Auto-send a prompt that was queued by Home or the command palette.
+  // Only fire when there's no session being opened (otherwise we'd submit
+  // before historical messages have been loaded in).
   useEffect(() => {
-    if (messages.length === 1 && messages[0].role === 'user' && !streaming) {
+    if (
+      messages.length === 1 &&
+      messages[0].role === 'user' &&
+      !streaming &&
+      !openedSessionId &&
+      !loadingSession
+    ) {
       void submit(messages[0].content, { alreadyAppended: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -145,6 +161,7 @@ export function ThreadsPane() {
       if (!opts?.alreadyAppended) {
         append({ id: `u${Date.now()}`, role: 'user', content: text, createdAt: Date.now() });
       }
+      markLastUserError(null);
       setDraft('');
       setStreaming(true);
       cancelRef.current = stream(
@@ -159,7 +176,9 @@ export function ThreadsPane() {
           },
         },
         (chunk) => {
-          if (chunk.type === 'token') {
+          if (chunk.type === 'session') {
+            setOpenedSessionId(chunk.sessionId);
+          } else if (chunk.type === 'token') {
             patch(chunk.delta);
           } else if (chunk.type === 'action') {
             update((m) => ({ ...m, actions: [...(m.actions ?? []), chunk.action] }));
@@ -170,18 +189,42 @@ export function ThreadsPane() {
             }));
           } else if (chunk.type === 'done') {
             if (chunk.sessionId) setOpenedSessionId(chunk.sessionId);
+            // Some providers finish without emitting any token (auth missing,
+            // rate-limit with empty body, etc.). Leave a visible placeholder
+            // so the user doesn't stare at a silent UI.
+            update((m) => ({
+              ...m,
+              content:
+                m.content || (m.actions && m.actions.length > 0)
+                  ? m.content
+                  : '_(no response — check provider settings)_',
+            }));
             void loadThreads();
+            // The first successful turn on a cold profile just finished
+            // warming the pool — refresh daemon state so StatusBar flips
+            // from "warming" to "live" without waiting for the next tick.
+            void refreshDaemonStatus();
           } else if (chunk.type === 'error') {
-            patch(`\n\n⚠️ ${chunk.message}`);
-            pushToast({ kind: 'error', title: 'Hermes failed', description: chunk.message });
+            markLastUserError(chunk.message);
+            pushToast({ kind: 'error', title: 'Stark failed', description: chunk.message });
             setStreaming(false);
           }
         },
         () => setStreaming(false),
       );
     },
-    [streaming, activeProvider, activeProfile, openedSessionId, append, update, patch, setStreaming, reset, pushToast],
+    [streaming, activeProvider, activeProfile, openedSessionId, append, update, patch, setStreaming, reset, pushToast, markLastUserError],
   );
+
+  const retry = useCallback(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.role === 'user' && m.error) {
+        void submit(m.content, { alreadyAppended: true });
+        return;
+      }
+    }
+  }, [messages, submit]);
 
   const cancel = useCallback(() => {
     cancelRef.current?.();
@@ -288,17 +331,63 @@ export function ThreadsPane() {
                 Stop
               </Button>
             ) : null}
+            {messages.length > 0 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leading={<Download className="h-3 w-3" />}
+                  onClick={() => downloadThread(messages, 'markdown')}
+                  title="Export thread as Markdown"
+                >
+                  Export
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    void copyThread(messages).then(() =>
+                      pushToast({ kind: 'success', title: 'Copied transcript' }),
+                    );
+                  }}
+                  title="Copy transcript to clipboard"
+                >
+                  Copy
+                </Button>
+              </>
+            )}
             <Button variant="ghost" size="sm" leading={<Trash2 className="h-3 w-3" />} onClick={newThread}>
               Clear
             </Button>
           </div>
         </div>
 
+        {engineInstalled === false && (
+          <button
+            onClick={() => setRoute('settings')}
+            className="anim-in group flex w-full items-center gap-3 border-b border-[var(--warn)]/30 bg-[var(--warn-wash)]/40 px-6 py-2.5 text-left transition-colors duration-[var(--motion-dur-sm)] hover:bg-[var(--warn-wash)]/60 focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
+            aria-label="Open System Doctor"
+          >
+            <span
+              aria-hidden
+              className="inline-block h-2 w-2 shrink-0 rounded-full bg-[var(--warn)] shadow-[0_0_10px_var(--warn)]"
+            />
+            <span className="min-w-0 flex-1 text-[12px] text-[var(--fg)]">
+              <span className="font-medium">Running on the stub.</span>{' '}
+              <span className="text-[var(--fg-muted)]">
+                The engine isn't installed yet — replies are placeholders. Open System Doctor to install.
+              </span>
+            </span>
+            <span className="font-mono shrink-0 text-[10px] uppercase tracking-[0.18em] text-[var(--warn)] group-hover:text-[var(--fg)]">
+              open doctor →
+            </span>
+          </button>
+        )}
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-8 py-8">
           {messages.length === 0 && <EmptyThread ready={agentReady} />}
           <div className="mx-auto max-w-3xl space-y-6">
             {messages.map((m) => (
-              <Message key={m.id} msg={m} />
+              <Message key={m.id} msg={m} onRetry={m.error ? retry : undefined} />
             ))}
             {streaming &&
               (() => {
@@ -357,7 +446,7 @@ export function ThreadsPane() {
                 onClick={() => void submit(draft)}
                 disabled={!agentReady || !draft.trim() || streaming}
                 className={cn(
-                  'flex h-10 items-center gap-1.5 rounded-[var(--radius-md)] px-3 text-sm font-medium transition-all',
+                  'flex h-10 items-center gap-1.5 rounded-[var(--radius-md)] px-3 text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
                   draft.trim() && !streaming
                     ? 'bg-[var(--primary)] text-[var(--primary-ink)] shadow-[0_8px_20px_-10px_var(--primary-glow)] hover:bg-[var(--primary-hover)]'
                     : 'bg-[var(--surface-2)] text-[var(--fg-ghost)]',
@@ -397,8 +486,8 @@ function EmptyThread({ ready }: { ready: boolean }) {
       </h2>
       <p className="mt-3 max-w-md text-sm text-[var(--fg-muted)]">
         {ready
-          ? 'Ask anything. Hermes may use files, the browser, the terminal, memory, the web — every action will appear as a card you can pause or approve.'
-          : 'The Hermes engine is warming up. This only takes a moment on first launch.'}
+          ? 'Ask anything. Stark may use files, the browser, the terminal, memory, and the web — every action will appear as a card you can pause or approve.'
+          : 'The Stark engine is warming up. This only takes a moment on first launch.'}
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-2">
         {[
@@ -427,7 +516,7 @@ function EmptyThread({ ready }: { ready: boolean }) {
   );
 }
 
-function Message({ msg }: { msg: ChatMessage }) {
+function Message({ msg, onRetry }: { msg: ChatMessage; onRetry?: () => void }) {
   const isUser = msg.role === 'user';
   return (
     <div className={cn('flex gap-4 anim-in', isUser && 'justify-end')}>
@@ -438,9 +527,30 @@ function Message({ msg }: { msg: ChatMessage }) {
       )}
       <div className={cn('max-w-[82%]', isUser && 'max-w-[75%]')}>
         {isUser ? (
-          <div className="rounded-[var(--radius-lg)] rounded-tr-sm bg-[var(--primary-wash)] px-4 py-3 text-[14.5px] leading-relaxed text-[var(--fg)]">
-            {msg.content}
-          </div>
+          <>
+            <div
+              className={cn(
+                'rounded-[var(--radius-lg)] rounded-tr-sm bg-[var(--primary-wash)] px-4 py-3 text-[14.5px] leading-relaxed text-[var(--fg)]',
+                msg.error && 'border border-[var(--bad)]/60 bg-[var(--bad-wash)]/40',
+              )}
+            >
+              {msg.content}
+            </div>
+            {msg.error && (
+              <div className="mt-2 flex items-center justify-end gap-2 text-[11px]">
+                <AlertCircle className="h-3 w-3 text-[var(--bad)]" />
+                <span className="text-[var(--bad)]">{msg.error}</span>
+                {onRetry && (
+                  <button
+                    onClick={onRetry}
+                    className="font-mono inline-flex items-center gap-1 rounded-[var(--radius-xs)] border border-[var(--line)] bg-[var(--surface)] px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-[var(--fg-muted)] transition-colors hover:border-[var(--primary)]/60 hover:bg-[var(--primary-wash)] hover:text-[var(--primary)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
+                  >
+                    <RefreshCw className="h-3 w-3" /> retry
+                  </button>
+                )}
+              </div>
+            )}
+          </>
         ) : (
           <>
             {msg.actions && msg.actions.length > 0 && (

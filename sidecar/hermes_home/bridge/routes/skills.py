@@ -6,27 +6,29 @@ from __future__ import annotations
 
 import time
 
-from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
 
 from .. import hermes_cli
+from ..rate_limit import skill_install_rate_limit
 from ..store import Store, get_store
+from ..validation import safe_argv
 
 router = APIRouter(prefix="/skills", tags=["skills"])
 
 
 class CreateSkill(BaseModel):
-    name: str
-    trigger: str
-    steps: list[str]
+    name: str = Field(max_length=200)
+    trigger: str = Field(max_length=200)
+    steps: list[str] = Field(max_length=64)
 
 
 class InstallSkill(BaseModel):
-    identifier: str
+    identifier: str = Field(max_length=200)
 
 
 class AddTap(BaseModel):
-    repo: str
+    repo: str = Field(max_length=200)
 
 
 def _toggle_state() -> dict[str, dict]:
@@ -106,22 +108,20 @@ async def inspect_marketplace_skill(
     settings = get_store().read("settings") or {}
     prof = profile or settings.get("active_profile")
     if not hermes_cli.available():
-        raise HTTPException(status_code=503, detail="Hermes CLI is not available.")
+        raise HTTPException(status_code=503, detail="Engine CLI is not available.")
     try:
         return {**hermes_cli.inspect_skill(prof, identifier), "profile": prof}
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
-@router.post("/marketplace/install")
+@router.post("/marketplace/install", dependencies=[Depends(skill_install_rate_limit())])
 async def install_marketplace_skill(body: InstallSkill, profile: str | None = Query(default=None)) -> dict:
     settings = get_store().read("settings") or {}
     prof = profile or settings.get("active_profile")
     if not hermes_cli.available():
-        raise HTTPException(status_code=503, detail="Hermes CLI is not available.")
-    identifier = body.identifier.strip()
-    if not identifier:
-        raise HTTPException(status_code=400, detail="Skill identifier is required.")
+        raise HTTPException(status_code=503, detail="Engine CLI is not available.")
+    identifier = safe_argv(body.identifier.strip(), field="identifier")
     try:
         return {**hermes_cli.install_skill(prof, identifier), "profile": prof}
     except RuntimeError as exc:
@@ -133,10 +133,11 @@ async def add_marketplace_tap(body: AddTap, profile: str | None = Query(default=
     settings = get_store().read("settings") or {}
     prof = profile or settings.get("active_profile")
     if not hermes_cli.available():
-        raise HTTPException(status_code=503, detail="Hermes CLI is not available.")
+        raise HTTPException(status_code=503, detail="Engine CLI is not available.")
     repo = body.repo.strip()
     if not repo or "/" not in repo or repo.startswith("/") or repo.endswith("/"):
         raise HTTPException(status_code=400, detail="Enter a GitHub repo as owner/repo.")
+    repo = safe_argv(repo, field="repo")
     try:
         return {**hermes_cli.add_skill_tap(prof, repo), "profile": prof}
     except RuntimeError as exc:

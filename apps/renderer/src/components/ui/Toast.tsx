@@ -4,17 +4,29 @@ import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 import { cn } from '../../lib/cn';
 
 export type ToastKind = 'success' | 'error' | 'info';
-type Toast = { id: string; kind: ToastKind; title: string; description?: string };
+
+export type ToastAction = {
+  label: string;
+  onClick: () => void;
+};
+
+type Toast = {
+  id: string;
+  kind: ToastKind;
+  title: string;
+  description?: string;
+  action?: ToastAction;
+  /** Override auto-dismiss. Defaults to VISIBLE_MS; pass null to pin. */
+  durationMs?: number | null;
+};
 
 type Store = {
   toasts: Toast[];
-  push: (t: Omit<Toast, 'id'>) => void;
+  push: (t: Omit<Toast, 'id'>) => string;
   dismiss: (id: string) => void;
 };
 
-/** Total visible time before auto-dismiss begins its exit animation. */
 const VISIBLE_MS = 4000;
-/** Exit animation duration (matches --motion-dur-sm). */
 const EXIT_MS = 320;
 
 export const useToast = create<Store>((set) => ({
@@ -22,9 +34,13 @@ export const useToast = create<Store>((set) => ({
   push: (t) => {
     const id = `t${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
     set((s) => ({ toasts: [...s.toasts, { ...t, id }] }));
-    window.setTimeout(() => {
-      set((s) => ({ toasts: s.toasts.filter((x) => x.id !== id) }));
-    }, VISIBLE_MS + EXIT_MS);
+    const dur = t.durationMs === undefined ? VISIBLE_MS : t.durationMs;
+    if (dur !== null) {
+      window.setTimeout(() => {
+        set((s) => ({ toasts: s.toasts.filter((x) => x.id !== id) }));
+      }, dur + EXIT_MS);
+    }
+    return id;
   },
   dismiss: (id) => set((s) => ({ toasts: s.toasts.filter((x) => x.id !== id) })),
 }));
@@ -48,16 +64,18 @@ export function ToastStack() {
 
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }) {
   const [exiting, setExiting] = useState(false);
+  const dur = toast.durationMs === undefined ? VISIBLE_MS : toast.durationMs;
 
   useEffect(() => {
-    const t = window.setTimeout(() => setExiting(true), VISIBLE_MS);
+    if (dur === null) return;
+    const t = window.setTimeout(() => setExiting(true), dur);
     return () => window.clearTimeout(t);
-  }, []);
+  }, [dur]);
 
   return (
     <div
       className={cn(
-        'pointer-events-auto flex min-w-[280px] max-w-sm items-start gap-3',
+        'pointer-events-auto flex min-w-[300px] max-w-sm items-start gap-3',
         'rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--surface-2)]',
         'px-4 py-3 shadow-[var(--shadow-md)]',
         exiting ? 'anim-out' : 'anim-in',
@@ -72,6 +90,21 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
           <div className="mt-0.5 text-xs text-[var(--fg-muted)]">{toast.description}</div>
         )}
       </div>
+      {toast.action && (
+        <button
+          onClick={() => {
+            toast.action?.onClick();
+            onDismiss();
+          }}
+          className={cn(
+            'font-mono shrink-0 rounded-[var(--radius-xs)] border border-[var(--line)] bg-[var(--surface)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--fg)]',
+            'transition-colors duration-[var(--motion-dur-sm)] hover:border-[var(--primary)]/60 hover:bg-[var(--primary-wash)] hover:text-[var(--primary)]',
+            'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
+          )}
+        >
+          {toast.action.label}
+        </button>
+      )}
       <button
         onClick={onDismiss}
         aria-label="Dismiss"

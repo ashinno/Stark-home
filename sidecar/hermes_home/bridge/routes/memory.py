@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import time
+
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ..store import Store, get_store
 
@@ -11,7 +13,11 @@ router = APIRouter(prefix="/memory", tags=["memory"])
 
 
 class CreateNote(BaseModel):
-    text: str
+    text: str = Field(max_length=32_000)
+
+
+class UpdateNote(BaseModel):
+    text: str = Field(max_length=32_000)
 
 
 @router.get("/sessions")
@@ -69,11 +75,53 @@ async def notes() -> dict:
 @router.post("/notes")
 async def add_note(body: CreateNote) -> dict:
     store = get_store()
+    now = int(time.time())
 
     def mutate(d):
-        note = {"id": Store.new_id("note"), "text": body.text}
+        note = {
+            "id": Store.new_id("note"),
+            "text": body.text,
+            "created_at": now,
+            "updated_at": now,
+        }
         d["pinned_notes"].insert(0, note)
         return note
+
+    return {"note": store.mutate(mutate)}
+
+
+# Literal ``/notes/export`` is registered BEFORE the ``{nid}`` catch-all so
+# FastAPI can't accidentally treat "export" as a note id.
+@router.get("/notes/export")
+async def export_notes() -> dict:
+    """Return all pinned notes plus a snapshot timestamp. Clients can dump
+    this to a file for backup or portability."""
+    notes = get_store().read("pinned_notes")
+    return {
+        "exported_at": int(time.time()),
+        "count": len(notes),
+        "notes": notes,
+    }
+
+
+@router.patch("/notes/{nid}")
+async def update_note(nid: str, body: UpdateNote) -> dict:
+    """Update the text of an existing pinned note in-place. Bumps ``updated_at``
+    so the UI can show a ``(edited)`` tag without wiping the original
+    ``created_at``."""
+    store = get_store()
+    now = int(time.time())
+
+    def mutate(d):
+        for n in d["pinned_notes"]:
+            if n["id"] == nid:
+                n["text"] = body.text
+                n["updated_at"] = now
+                # Back-fill ``created_at`` for notes saved before we started
+                # tracking it; otherwise the UI would see ``undefined``.
+                n.setdefault("created_at", now)
+                return n
+        raise HTTPException(404, "not found")
 
     return {"note": store.mutate(mutate)}
 

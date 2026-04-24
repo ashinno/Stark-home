@@ -9,7 +9,7 @@ import { relTime } from '../../lib/time';
 import { cn } from '../../lib/cn';
 
 /**
- * Live ops view — what Hermes is doing right this second.
+ * Live ops view — what Stark is doing right this second.
  * Polls /jobs and /approvals every 3 seconds. Renders a single timeline so
  * the user can see in-flight work and pending approvals together.
  */
@@ -43,8 +43,8 @@ export function ActivityPane() {
       <div className="flex items-center justify-between border-b border-[var(--line)] px-8 py-5">
         <SectionHeading
           eyebrow="Activity"
-          title="What Hermes is doing right now"
-          description="Running jobs, pending approvals, and recent action cards \u2014 refreshed every 3s."
+          title="What Stark is doing right now"
+          description="Running jobs, pending approvals, and recent action cards — refreshed every 3s."
         />
         <Button
           variant={paused ? 'secondary' : 'destructive'}

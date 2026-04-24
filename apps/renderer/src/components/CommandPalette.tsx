@@ -10,6 +10,8 @@ import {
   Play,
   Search,
   Zap,
+  Keyboard,
+  ServerCog,
 } from 'lucide-react';
 import { useSession, type Route } from '../stores/session';
 import { Kbd } from './ui/Atoms';
@@ -20,21 +22,21 @@ type Command = {
   id: string;
   title: string;
   subtitle?: string;
-  group: 'Ask Hermes' | 'Navigate' | 'Run';
+  group: 'Ask Stark' | 'Navigate' | 'Run';
   icon: typeof HomeIcon;
   run: () => void;
   keywords?: string;
 };
 
 /**
- * Global command palette — the answer to "What should Hermes do?"
+ * Global command palette — the answer to "What should Stark do?"
  *
  * Three groups:
- *   • Ask Hermes — turn the query into a thread prompt
+ *   • Ask Stark — turn the query into a thread prompt
  *   • Navigate   — jump to any top-level area
  *   • Run        — shortcuts for common agent tasks
  */
-export function CommandPalette() {
+export function CommandPalette({ onShowShortcuts }: { onShowShortcuts?: () => void } = {}) {
   const open = useSession((s) => s.paletteOpen);
   const setOpen = useSession((s) => s.setPaletteOpen);
   const setRoute = useSession((s) => s.setRoute);
@@ -80,7 +82,7 @@ export function CommandPalette() {
             id: 'ask',
             title: q,
             subtitle: 'Send as a prompt',
-            group: 'Ask Hermes',
+            group: 'Ask Stark',
             icon: ArrowUpRight,
             run: () => sendPrompt(q),
           },
@@ -92,22 +94,53 @@ export function CommandPalette() {
       { id: 'go-tools', title: 'Tools', group: 'Navigate', icon: Wrench, run: () => navigate('tools'), keywords: 'files terminal browser web memory permissions' },
       { id: 'go-skills', title: 'Skills', group: 'Navigate', icon: Sparkles, run: () => navigate('skills') },
       { id: 'go-autos', title: 'Automations', group: 'Navigate', icon: CalendarClock, run: () => navigate('automations'), keywords: 'cron jobs schedule' },
+      { id: 'go-system', title: 'System', group: 'Navigate', icon: ServerCog, run: () => navigate('system'), keywords: 'analytics logs keys config env gateway status' },
       { id: 'go-settings', title: 'Settings', group: 'Navigate', icon: Cog, run: () => navigate('settings'), keywords: 'providers doctor theme' },
     ];
     const run: Command[] = [
       { id: 'r-brief', title: 'Run morning brief', subtitle: 'Summary of yesterday + today', group: 'Run', icon: Play, run: () => sendPrompt('Run my morning brief') },
       { id: 'r-downloads', title: 'Analyze my Downloads folder', group: 'Run', icon: Search, run: () => sendPrompt('Analyze the files in my Downloads folder and summarize by type.') },
-      { id: 'r-doctor', title: 'Open Hermes Doctor', group: 'Run', icon: Zap, run: () => navigate('settings') },
+      { id: 'r-doctor', title: 'Open System Doctor', group: 'Run', icon: Zap, run: () => navigate('settings') },
       { id: 'r-folder', title: 'Summarize current folder', group: 'Run', icon: Search, run: () => sendPrompt('Summarize what is in my current working folder.') },
+      ...(onShowShortcuts
+        ? [{
+            id: 'r-shortcuts',
+            title: 'Keyboard shortcuts',
+            subtitle: 'Show the cheat sheet',
+            group: 'Run' as const,
+            icon: Keyboard,
+            keywords: 'help hotkeys bindings cheatsheet',
+            run: () => {
+              setOpen(false);
+              onShowShortcuts();
+            },
+          }]
+        : []),
     ];
     const all = [...ask, ...nav, ...run];
-    const query = q.toLowerCase();
-    const filtered = query
-      ? all.filter((c) =>
-          (c.title + ' ' + (c.subtitle ?? '') + ' ' + (c.keywords ?? '')).toLowerCase().includes(query),
-        )
-      : all;
-    return filtered;
+    const query = q.trim().toLowerCase();
+    if (!query) return all;
+    // Score so title/subtitle prefix matches rank above keyword substring hits
+    // — otherwise "mem" for Memory can rank behind Tools (whose keywords list
+    // contains "memory").
+    const scored = all
+      .map((c) => {
+        const title = c.title.toLowerCase();
+        const subtitle = (c.subtitle ?? '').toLowerCase();
+        const keywords = (c.keywords ?? '').toLowerCase();
+        let score = 0;
+        if (title === query) score = 100;
+        else if (title.startsWith(query)) score = 80;
+        else if (title.includes(query)) score = 60;
+        else if (subtitle.includes(query)) score = 40;
+        else if (keywords.includes(query)) score = 20;
+        // Ask-Stark passthrough always matches so the user can send the query.
+        if (c.group === 'Ask Stark') score = Math.max(score, 1);
+        return { c, score };
+      })
+      .filter((x) => x.score > 0);
+    scored.sort((a, b) => b.score - a.score);
+    return scored.map((x) => x.c);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
 
@@ -148,7 +181,16 @@ export function CommandPalette() {
             ref={inputRef}
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="What should Hermes do?"
+            onKeyDown={(e) => {
+              // Close on Escape even when the input has focus — some browsers
+              // swallow window-level keydown for text inputs.
+              if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                setOpen(false);
+              }
+            }}
+            placeholder="What should Stark do?"
             className="flex-1 bg-transparent text-[15px] outline-none placeholder:text-[var(--fg-ghost)]"
           />
           <Kbd>esc</Kbd>

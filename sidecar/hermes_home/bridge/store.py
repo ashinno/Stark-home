@@ -42,7 +42,7 @@ _SEED: dict[str, Any] = {
         "onboarded": False,
     },
     "providers": [
-        {"id": "nous", "name": "Nous Portal", "kind": "subscription", "configured": True, "model": "hermes-3-405b", "description": "Recommended. Hermes-tuned models with 128K context."},
+        {"id": "nous", "name": "Nous Portal", "kind": "subscription", "configured": True, "model": "hermes-3-405b", "description": "Recommended models with 128K context."},
         {"id": "openai", "name": "OpenAI", "kind": "api-key", "configured": False, "model": "gpt-4.1", "description": "Direct API-key access to the latest OpenAI models."},
         {"id": "anthropic", "name": "Anthropic", "kind": "api-key", "configured": False, "model": "claude-opus-4-7", "description": "Claude Opus, Sonnet, Haiku via API key."},
         {"id": "openrouter", "name": "OpenRouter", "kind": "api-key", "configured": False, "model": "auto", "description": "200+ models routed behind one key."},
@@ -100,7 +100,7 @@ _SEED: dict[str, Any] = {
         }
     ],
     "suggestions": [
-        {"id": "s-tour", "title": "A tour of what Hermes can do", "description": "Two-minute walkthrough of every tool on this Mac.", "prompt": "Give me a two-minute tour of what Hermes can do on this Mac."},
+        {"id": "s-tour", "title": "A tour of what Stark can do", "description": "Two-minute walkthrough of every tool on this Mac.", "prompt": "Give me a two-minute tour of what Stark can do on this Mac."},
         {"id": "s-dl", "title": "Tidy my Downloads folder", "description": "Index, group by type, propose what to archive.", "prompt": "Analyze my Downloads folder and suggest what to archive."},
         {"id": "s-brief", "title": "Set up a daily brief", "description": "Runs at 8am, posts to Home + optional Telegram.", "prompt": "Create a daily brief automation that runs at 8am."},
         {"id": "s-folder", "title": "Summarize this folder", "description": "Quick précis of what the agent finds here.", "prompt": "Summarize what is in my current working folder."},

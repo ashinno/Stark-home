@@ -1,7 +1,7 @@
 {
   "name": "stark",
   "version": "0.1.0",
-  "description": "Stark — a native Mac control center for the Hermes Agent. Install once, connect your model, approve what matters, and let an AI operator work across files, browser, terminal, memory, skills, automations, and messaging.",
+  "description": "Stark — a native Mac control center for local AI work. Install once, connect your model, approve what matters, and let an AI operator work across files, browser, terminal, memory, skills, automations, and messaging.",
   "private": true,
   "author": "Stark Contributors",
   "license": "MIT",

@@ -15,6 +15,7 @@ import { useSession } from '../../stores/session';
 import { SectionHeading, Badge } from '../../components/ui/Atoms';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
+import { Switch } from '../../components/ui/Switch';
 import { useToast } from '../../components/ui/Toast';
 import { call } from '../../lib/rpc';
 import { cn } from '../../lib/cn';
@@ -39,8 +40,8 @@ const TOOLS: ToolDef[] = [
   { id: 'terminal', title: 'Terminal', icon: TerminalSquare, description: 'Run shell commands and scripts.', detail: 'Whitelisted directories. Destructive commands always prompt.', needsApproval: true, scope: 'Whitelisted shells + cwds', configureRoute: 'settings' },
   { id: 'browser', title: 'Browser', icon: Globe2, description: 'Navigate, fill, scrape pages.', detail: 'Runs in an ephemeral profile, no shared cookies unless you opt in.', needsApproval: true, scope: 'Ephemeral profile', configureRoute: 'settings' },
   { id: 'web', title: 'Web search', icon: Search, description: 'Search the web and cite results.', detail: 'Safe by default. Outbound HTTPS only.', needsApproval: false, scope: 'Outbound HTTPS', configureRoute: 'settings' },
-  { id: 'memory', title: 'Memory', icon: Brain, description: 'Long-term notes + session history.', detail: 'Local SQLite. Always on-device.', needsApproval: false, scope: '~/Library/Application Support/Hermes', configureRoute: 'memory' },
-  { id: 'messaging', title: 'Messaging gateway', icon: MessageCircle, description: 'Telegram / Slack / Discord / WhatsApp / Signal / Email.', detail: 'Tokens live in ~/.hermes/.env.', needsApproval: true, scope: 'Per-channel auth', configureRoute: 'gateways' },
+  { id: 'memory', title: 'Memory', icon: Brain, description: 'Long-term notes + session history.', detail: 'Local SQLite. Always on-device.', needsApproval: false, scope: 'Local app data', configureRoute: 'memory' },
+  { id: 'messaging', title: 'Messaging gateway', icon: MessageCircle, description: 'Telegram / Slack / Discord / WhatsApp / Signal / Email.', detail: 'Tokens live in the local secrets file.', needsApproval: true, scope: 'Per-channel auth', configureRoute: 'gateways' },
   { id: 'delegation', title: 'Delegation', icon: Share2, description: 'Spawn subagents for parallel work.', detail: 'Each subagent inherits the safety preset.', needsApproval: false, scope: 'Forked thread', configureRoute: 'automations' },
   { id: 'mcp', title: 'MCP servers', icon: Plug, description: 'Extend with Model Context Protocol tools.', detail: 'Any stdio/HTTP MCP server.', needsApproval: false, scope: 'Per-server config', configureRoute: 'settings' },
 ];
@@ -95,15 +96,20 @@ export function ToolsPane() {
 
   return (
     <div className="flex h-full flex-col bg-[var(--bg)]">
-      <div className="border-b border-[var(--line)] px-8 py-5">
-        <SectionHeading
-          eyebrow="Tools"
-          title="What Hermes can do"
-          description="Toggle the capabilities Hermes can use during a run."
-        />
+      <div className="border-b border-[var(--line)] bg-[#141726]/72 px-7 py-4 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-end justify-between gap-6">
+          <SectionHeading
+            eyebrow="Tools"
+            title="Capability controls"
+            description="Enable the runtime surfaces Stark can reach during a run."
+          />
+          <div className="hidden font-mono text-[10px] uppercase tracking-[0.28em] text-[#727898] lg:block">
+            approval-gated actions stay explicit
+          </div>
+        </div>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
-        <div className="stagger mx-auto grid max-w-6xl grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <div className="min-h-0 flex-1 overflow-y-auto px-7 py-5">
+        <div className="stagger mx-auto grid max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {TOOLS.map((t, i) => {
             const on = isCapability(t.id) && caps.includes(t.id);
             const always = !isCapability(t.id);
@@ -113,72 +119,62 @@ export function ToolsPane() {
                 glow={on}
                 style={{ '--i': i } as React.CSSProperties}
                 className={cn(
-                  'group overflow-hidden',
-                  on ? 'border-[var(--primary)]/40' : '',
+                  'group overflow-hidden rounded-[16px] border bg-[#181b27] shadow-[0_14px_30px_rgba(5,7,16,0.2)]',
+                  on
+                    ? 'border-[#5064de] shadow-[0_14px_30px_rgba(26,34,86,0.28),inset_0_0_0_1px_rgba(120,138,255,0.1)]'
+                    : 'border-[#2a2f46] hover:border-[#3a4062] hover:bg-[#1b1f2d]',
                 )}
               >
-                <div className="p-5">
+                <div className="p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
                       <div
                         className={cn(
-                          'flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] transition-colors',
+                          'flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] border transition-colors',
                           on
-                            ? 'bg-[var(--primary-wash)] text-[var(--primary)]'
-                            : 'bg-[var(--surface-2)] text-[var(--fg-dim)] group-hover:text-[var(--fg-muted)]',
+                            ? 'border-[#4454b6] bg-[#20284c] text-[#8da2ff]'
+                            : 'border-[#262c45] bg-[#20253b] text-[#7d85a9] group-hover:text-[#aeb4d8]',
                         )}
                       >
-                        <t.icon className="h-4 w-4" />
+                        <t.icon className="h-5 w-5" />
                       </div>
-                      <div className="flex flex-col items-start gap-1">
-                        <div className="text-[14px] font-medium text-[var(--fg)]">{t.title}</div>
+                      <div className="flex min-w-0 flex-col items-start gap-1">
+                        <div className="max-w-full truncate text-[15px] font-semibold text-[#eef1ff]">
+                          {t.title}
+                        </div>
                         {t.needsApproval && <Badge tone="signal">approval</Badge>}
                       </div>
                     </div>
                     {always ? (
                       <Badge tone="neutral">always on</Badge>
                     ) : (
-                      <button
-                        onClick={() => toggle(t.id)}
-                        disabled={saving === t.id}
-                        role="switch"
-                        aria-checked={on}
-                        aria-label={`${on ? 'Disable' : 'Enable'} ${t.title}`}
-                        className={cn(
-                          'relative h-6 w-10 shrink-0 rounded-full',
-                          'transition-[background-color,box-shadow] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
-                          'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
-                          on
-                            ? 'bg-[var(--primary)] shadow-[0_0_12px_-2px_var(--primary-glow)]'
-                            : 'bg-[var(--surface-3)]',
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm',
-                            'transition-transform duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-spring)]',
-                            on ? 'translate-x-[18px]' : 'translate-x-0.5',
-                            saving === t.id && 'animate-[stark-spin_0.7s_linear_infinite]',
-                          )}
-                        />
-                      </button>
+                      <Switch
+                        checked={on}
+                        loading={saving === t.id}
+                        onChange={() => toggle(t.id)}
+                        ariaLabel={`${on ? 'Disable' : 'Enable'} ${t.title}`}
+                      />
                     )}
                   </div>
-                  <p className="mt-4 text-[13px] leading-relaxed text-[var(--fg-muted)]">
+                  <p className="mt-4 text-[13px] leading-6 text-[#c3c8e2]">
                     {t.description}
                   </p>
-                  <p className="mt-1 text-[12px] italic leading-relaxed text-[var(--fg-dim)]">
+                  <p className="mt-1.5 text-[11.5px] italic leading-5 text-[#7f86a8]">
                     {t.detail}
                   </p>
                 </div>
-                <div className="flex items-center justify-between border-t border-[var(--line)] bg-[var(--surface-2)]/50 px-5 py-2.5">
-                  <div className="font-mono flex min-w-0 items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-[var(--fg-ghost)]">
-                    <ShieldCheck className="h-3 w-3" /> {t.scope}
+                <div className="flex items-center justify-between gap-3 border-t border-[#272c42] bg-[#1b1f2d] px-4 py-3">
+                  <div className="min-w-0">
+                    <div className="font-mono flex items-center gap-1.5 text-[9px] uppercase tracking-[0.24em] text-[#68708d]">
+                      <ShieldCheck className="h-3 w-3" />
+                      Scope
+                    </div>
+                    <div className="mt-0.5 max-w-[190px] truncate text-[12px] text-[#aeb4d8]">{t.scope}</div>
                   </div>
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="shrink-0"
+                    className="h-8 shrink-0 rounded-[10px] border border-transparent px-3 text-[12px] text-[#c7cce6] hover:border-[#313754] hover:bg-[#22273a] hover:text-[#f0f3ff]"
                     leading={<Settings2 className="h-3 w-3" />}
                     onClick={() => t.configureRoute && setRoute(t.configureRoute)}
                   >

@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ChevronDown, Check, Circle, RefreshCcw } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { call } from '../lib/rpc';
 import { useSession } from '../stores/session';
 import { Mascot } from './Mascot';
@@ -7,7 +8,7 @@ import type { Profile, ProfilesResponse } from '@shared/rpc';
 import { cn } from '../lib/cn';
 
 /**
- * Profile picker — lists the Hermes profiles detected on this Mac and lets
+ * Profile picker — lists the local profiles detected on this Mac and lets
  * the user pick which one to talk to. Each profile gets its own cute Stark
  * avatar (tinted by a hash of the profile name so "akita" and "stark" feel
  * distinct at a glance).
@@ -26,6 +27,7 @@ export function ProfilePicker({
   const [resp, setResp] = useState<ProfilesResponse | null>(null);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
   const anchorRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
 
@@ -67,6 +69,33 @@ export function ProfilePicker({
     };
   }, [open]);
 
+  useLayoutEffect(() => {
+    if (!open || size !== 'compact') return;
+    const updatePosition = () => {
+      const anchor = anchorRef.current;
+      if (!anchor) return;
+      const rect = anchor.getBoundingClientRect();
+      const width = Math.min(340, window.innerWidth - 24);
+      const left =
+        align === 'right'
+          ? Math.max(12, rect.right - width)
+          : Math.min(rect.left, window.innerWidth - width - 12);
+      setMenuStyle({
+        position: 'fixed',
+        top: Math.min(rect.bottom + 12, window.innerHeight - 24),
+        left,
+        width,
+      });
+    };
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [align, open, size]);
+
   async function pick(id: string) {
     setBusy(id);
     const r = await call<{ active: string }>({
@@ -89,7 +118,7 @@ export function ProfilePicker({
   const profiles = resp?.profiles ?? [];
   const current = profiles.find((p) => p.id === active) ?? profiles[0];
 
-  // Hermes CLI isn't installed → hide the picker entirely.
+  // Engine CLI isn't installed → hide the picker entirely.
   if (resp && !resp.available) return null;
 
   if (size === 'full') {
@@ -106,68 +135,78 @@ export function ProfilePicker({
 
   return (
     <div className="relative">
-      {/* Compact pill — avatar + short name + caret. ~130-150px depending on name. */}
       <button
         ref={anchorRef}
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          'no-drag flex items-center gap-2 rounded-[var(--radius-sm)] border',
-          'border-[var(--line)] bg-[var(--surface-2)]/70 px-2 py-1 transition-colors',
-          'hover:border-[var(--line-strong)] hover:bg-[var(--surface-2)]',
+          'no-drag flex h-10 w-[220px] items-center gap-2.5 rounded-[14px] border px-2.5',
+          'border-[#34395f] bg-[#171a29]/96 shadow-[0_12px_24px_rgba(4,6,16,0.26),inset_0_1px_0_rgba(255,255,255,0.04)]',
+          'transition-[border-color,background-color,box-shadow,transform] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
+          'hover:border-[#49539a] hover:bg-[#1b1f31] hover:shadow-[0_14px_26px_rgba(4,6,16,0.32),inset_0_1px_0_rgba(255,255,255,0.05)]',
+          open && 'border-[#657cff] bg-[#1b1f31] shadow-[0_16px_30px_rgba(4,6,16,0.34),0_0_0_1px_rgba(101,124,255,0.16)]',
         )}
         title={current ? `Profile: ${current.name} · ${current.model}` : 'Profile'}
       >
-        <ProfileAvatar id={current?.id ?? 'default'} size={1} expr="happy" />
-        <span className="font-mono max-w-[110px] truncate text-[11px] uppercase tracking-[0.14em] text-[var(--fg)]">
-          {current?.name ?? 'no profile'}
-        </span>
+        <div className="rounded-[10px] border border-[#4b5078] bg-[#f2eddd] p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.38)]">
+          <ProfileAvatar id={current?.id ?? 'default'} size={0.72} expr="happy" />
+        </div>
+        <div className="min-w-0 flex-1 text-left">
+          <div className="truncate text-[12px] font-semibold tracking-[0.12em] text-[#f2f4ff]">
+            {(current?.name ?? 'No profile').toUpperCase()}
+          </div>
+          <div className="truncate font-mono text-[10px] text-[#8f94b2]">
+            {current ? `${current.provider}/${current.model}` : 'Select a profile'}
+          </div>
+        </div>
         <ChevronDown
           className={cn(
-            'h-3 w-3 shrink-0 text-[var(--fg-dim)] transition-transform',
+            'h-3.5 w-3.5 shrink-0 text-[#7e84aa] transition-transform',
             open && 'rotate-180',
           )}
         />
       </button>
 
-      {open && (
-        <div
-          ref={popRef}
-          className={cn(
-            'absolute top-full z-[90] mt-2 w-[320px] overflow-hidden rounded-[var(--radius-md)] border',
-            'border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-lg)] anim-in-scale',
-            align === 'right' ? 'right-0' : 'left-0',
-          )}
-        >
-          <div className="flex items-center justify-between border-b border-[var(--line)] px-3.5 py-2.5">
-            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--fg-ghost)]">
-              Hermes profiles
-            </div>
-            <button
-              onClick={load}
-              className="rounded-full p-1 text-[var(--fg-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--fg)]"
-              title="Refresh"
-            >
-              <RefreshCcw className="h-3 w-3" />
-            </button>
-          </div>
-          <div className="max-h-[56vh] overflow-y-auto py-1">
-            {profiles.map((p) => (
-              <ProfileRow
-                key={p.id}
-                profile={p}
-                active={p.id === active}
-                busy={busy === p.id}
-                onPick={() => pick(p.id)}
-              />
-            ))}
-            {profiles.length === 0 && (
-              <div className="px-3 py-6 text-center text-[12px] text-[var(--fg-muted)]">
-                No profiles found. Run <span className="font-mono">hermes profile create</span> to add one.
-              </div>
+      {open &&
+        createPortal(
+          <div
+            ref={popRef}
+            style={menuStyle}
+            className={cn(
+              'z-[160] overflow-hidden rounded-[18px] border anim-in-scale',
+              'border-[#30365a] bg-[#171924]/98 shadow-[0_32px_80px_rgba(2,4,12,0.62),inset_0_1px_0_rgba(255,255,255,0.04)]',
             )}
-          </div>
-        </div>
-      )}
+          >
+            <div className="flex items-center justify-between border-b border-[#2a2f4c] px-4 py-3">
+              <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#6e7393]">
+                Profiles
+              </div>
+              <button
+                onClick={load}
+                className="rounded-full p-1.5 text-[#7f85a8] transition-colors hover:bg-[#202437] hover:text-[#eff2ff]"
+                title="Refresh"
+              >
+                <RefreshCcw className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <div className="max-h-[56vh] overflow-y-auto bg-[#171924] py-2">
+              {profiles.map((p) => (
+                <ProfileRow
+                  key={p.id}
+                  profile={p}
+                  active={p.id === active}
+                  busy={busy === p.id}
+                  onPick={() => pick(p.id)}
+                />
+              ))}
+              {profiles.length === 0 && (
+                <div className="px-5 py-7 text-center text-[12px] text-[#9499b8]">
+                  No profiles found. Create one from the command line, then refresh this view.
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
@@ -189,51 +228,48 @@ function ProfileRow({
       onClick={onPick}
       disabled={busy}
       className={cn(
-        'mx-1.5 flex w-[calc(100%-0.75rem)] items-start gap-3 rounded-[var(--radius-sm)] px-3 py-2.5 text-left transition-colors',
+        'mx-2 flex w-[calc(100%-1rem)] items-start gap-3 rounded-[14px] border px-3 py-3 text-left transition-[background-color,border-color,box-shadow]',
         active
-          ? 'bg-[var(--primary-wash)] ring-1 ring-[var(--primary)]/35'
-          : 'hover:bg-[var(--surface-2)]',
+          ? 'border-[#4b5fdb] bg-[#222742] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
+          : 'border-transparent bg-transparent hover:border-[#2c3150] hover:bg-[#1d2132]',
       )}
     >
-      <div className="mt-0.5">
-        <ProfileAvatar id={profile.id} size={2} expr={active ? 'happy' : 'idle'} />
+      <div className="mt-0.5 rounded-[12px] border border-[#4b5078] bg-[#f2eddd] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.42)]">
+        <ProfileAvatar id={profile.id} size={1.35} expr={active ? 'happy' : 'idle'} />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="text-[13px] font-semibold text-[var(--fg)]">{profile.name}</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[14px] font-semibold text-[#f0f2ff]">{profile.name}</span>
           {profile.is_default && (
-            <span className="font-mono rounded border border-[var(--accent-signal)]/35 bg-[var(--accent-signal-wash)] px-1.5 py-px text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--accent-signal)]">
+            <span className="font-mono rounded-[8px] border border-[#7b5f2d] bg-[#433015] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-[#f2b542]">
               default
             </span>
           )}
           {profile.has_soul && (
-            <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--fg-ghost)]">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#707695]">
               · soul
             </span>
           )}
         </div>
-        <div className="font-mono mt-0.5 truncate text-[10.5px] text-[var(--fg-muted)]">
+        <div className="mt-0.5 truncate font-mono text-[10.5px] text-[#a7acc8]">
           {profile.model} · {profile.provider}
         </div>
-        <div className="font-mono mt-1 flex items-center gap-1.5 text-[9.5px] uppercase tracking-[0.14em] text-[var(--fg-ghost)]">
+        <div className="mt-2 grid grid-cols-[auto_1fr_auto] items-center gap-x-2 gap-y-1 font-mono text-[9px] uppercase tracking-[0.18em] text-[#6e7393]">
           <Circle
             className={cn(
-              'h-1.5 w-1.5',
+              'h-2 w-2',
               gatewayOk
-                ? 'fill-[var(--ok)] text-[var(--ok)]'
-                : 'fill-[var(--fg-ghost)] text-[var(--fg-ghost)]',
+                ? 'fill-[#2fd3c6] text-[#2fd3c6]'
+                : 'fill-[#6e7393] text-[#6e7393]',
             )}
           />
-          {profile.gateway}
+          <span>{profile.gateway}</span>
           {typeof profile.skills === 'number' && (
-            <>
-              <span className="opacity-60">·</span>
-              <span>{profile.skills} skills</span>
-            </>
+            <span className="justify-self-end">{profile.skills} skills</span>
           )}
         </div>
       </div>
-      {active && <Check className="mt-1 h-3.5 w-3.5 shrink-0 text-[var(--primary)]" />}
+      {active && <Check className="mt-1 h-4 w-4 shrink-0 text-[#8ca0ff]" />}
     </button>
   );
 }
@@ -271,7 +307,7 @@ function FullGrid({
               onClick={() => onPick(p.id)}
               disabled={busy === p.id}
               className={cn(
-                'flex items-start gap-3 rounded-[var(--radius-md)] border p-4 text-left transition-all',
+                'flex items-start gap-3 rounded-[var(--radius-md)] border p-4 text-left transition-[background-color,border-color,color,box-shadow,transform] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
                 isActive
                   ? 'border-[var(--primary)] bg-[var(--primary-wash)]'
                   : 'border-[var(--line)] bg-[var(--surface-2)] hover:border-[var(--line-strong)]',

@@ -12,6 +12,7 @@ import {
   Library,
   Radio,
   Settings as Cog,
+  ServerCog,
 } from 'lucide-react';
 import { useSession, type Route } from '../../stores/session';
 import { Card } from '../../components/ui/Card';
@@ -90,7 +91,7 @@ export function HomePane() {
           <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2">
             <h1 className="font-display text-[44px] leading-[1.04] tracking-tight">
               {userName ? `Hello, ${userName}.` : 'Hello.'}{' '}
-              <span className="italic text-[var(--fg-muted)]">What should Hermes do?</span>
+              <span className="italic text-[var(--fg-muted)]">What should Stark do?</span>
             </h1>
             <div className="relative shrink-0" style={{ width: 180, height: 80 }}>
               <div className="absolute inset-0 flex items-center justify-center">
@@ -343,13 +344,14 @@ type DockItem = {
 };
 
 const DOCK_ITEMS: DockItem[] = [
-  { id: 'threads', label: 'Threads', icon: MessagesSquare, blurb: 'Chat with Hermes', hotkey: '2' },
+  { id: 'threads', label: 'Threads', icon: MessagesSquare, blurb: 'Chat with Stark', hotkey: '2' },
   { id: 'tools', label: 'Tools', icon: Wrench, blurb: 'Toggle capabilities', hotkey: '3' },
   { id: 'skills', label: 'Skills', icon: Sparkles, blurb: 'Hub + marketplace', hotkey: '4' },
   { id: 'automations', label: 'Automations', icon: CalendarClock, blurb: 'Schedules & jobs', hotkey: '5' },
   { id: 'memory', label: 'Memory', icon: Library, blurb: 'Notes & sessions', hotkey: '6' },
   { id: 'gateways', label: 'Gateways', icon: Radio, blurb: 'Slack, Telegram, email', hotkey: '7' },
   { id: 'activity', label: 'Activity', icon: Activity, blurb: 'Live timeline', hotkey: '8' },
+  { id: 'system', label: 'System', icon: ServerCog, blurb: 'Logs, keys, config', hotkey: '9' },
   { id: 'settings', label: 'Settings', icon: Cog, blurb: 'Doctor, providers, MCP', hotkey: ',' },
 ];
 
@@ -357,9 +359,9 @@ function FeatureDock({ onGo }: { onGo: (r: Route) => void }) {
   return (
     <div>
       <SectionHeading
-        eyebrow="Hermes at a glance"
+        eyebrow="Stark at a glance"
         title="Every power, one click away"
-        description="Jump to any subsystem Hermes can run for you."
+        description="Jump to any subsystem Stark can run for you."
       />
       <div className="stagger mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-8">
         {DOCK_ITEMS.map(({ id, label, icon: Icon, blurb, hotkey }, i) => (

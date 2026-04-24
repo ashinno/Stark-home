@@ -102,7 +102,9 @@ export function HomeDock({ mode = 'sidebar' }: { mode?: HomeDockMode }) {
         body: { provider: activeProvider, profile: activeProfile, message: text },
       },
       (chunk) => {
-        if (chunk.type === 'token') patch(chunk.delta);
+        if (chunk.type === 'session') {
+          return;
+        } else if (chunk.type === 'token') patch(chunk.delta);
         else if (chunk.type === 'action')
           update((m) => ({ ...m, actions: [...(m.actions ?? []), chunk.action] }));
         else if (chunk.type === 'action-update')
@@ -112,7 +114,7 @@ export function HomeDock({ mode = 'sidebar' }: { mode?: HomeDockMode }) {
           }));
         else if (chunk.type === 'error') {
           patch(`\n\n⚠️ ${chunk.message}`);
-          pushToast({ kind: 'error', title: 'Hermes failed', description: chunk.message });
+          pushToast({ kind: 'error', title: 'Stark failed', description: chunk.message });
           setStreaming(false);
         }
       },

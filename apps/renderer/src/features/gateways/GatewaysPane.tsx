@@ -120,8 +120,8 @@ export function GatewaysPane() {
         <div className="flex items-end justify-between gap-6">
           <SectionHeading
             eyebrow="Gateways"
-            title="Reach Hermes from your apps"
-            description={`Per-profile messaging bridges. Real config is read from ${profile ? `~/.hermes/profiles/${profile}/.env` : '~/.hermes/.env'}.`}
+            title="Reach Stark from your apps"
+            description={`Per-profile messaging bridges. Real config is read from the ${profile ? `${profile} profile` : 'default profile'} secrets file.`}
           />
           <div className="flex items-center gap-3">
             <DaemonPill daemon={daemon} />
@@ -142,7 +142,7 @@ export function GatewaysPane() {
           <EmptyState
             icon={<Radio className="h-5 w-5" />}
             title="Gateways unavailable"
-            description="Hermes CLI not detected. Open Settings → Hermes Doctor."
+            description="Engine not detected. Open Settings → System Doctor."
           />
         ) : (
           <div className="stagger mx-auto grid max-w-5xl grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -350,8 +350,8 @@ function ConfigureGatewayDialog({
       title={`Configure ${gateway.name}`}
       description={
         profile
-          ? `Writing to ~/.hermes/profiles/${profile}/.env`
-          : 'Writing to ~/.hermes/.env'
+          ? `Writing to the ${profile} profile secrets file`
+          : 'Writing to the default secrets file'
       }
     >
       {gateway.configured && (

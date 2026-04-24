@@ -48,7 +48,16 @@ export class CodexDetector {
   async signIn(): Promise<void> {
     const bin = this.findBin();
     if (!bin) throw new Error('Codex CLI not installed');
-    const script = `tell application "Terminal" to do script "${bin.replace(/"/g, '\\"')} login"`;
+    // The resolved path is embedded into an AppleScript string that we hand
+    // to ``osascript``. A path containing quotes, backslashes, newlines, or
+    // AppleScript metachars would escape the string and let an attacker who
+    // planted a binary in the user's PATH run arbitrary AppleScript.
+    // Accept only a conservative shape for the path — which matches every
+    // ``which codex`` result in practice.
+    if (!/^[A-Za-z0-9_./+-]+$/.test(bin)) {
+      throw new Error('Codex CLI path contains unexpected characters; refusing to launch.');
+    }
+    const script = `tell application "Terminal" to do script "${bin} login"`;
     spawn('osascript', ['-e', script], { detached: true, stdio: 'ignore' }).unref();
   }
 

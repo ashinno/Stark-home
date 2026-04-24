@@ -8,6 +8,7 @@ import {
   Library,
   Radio,
   Activity as ActivityIcon,
+  ServerCog,
   Settings as Cog,
 } from 'lucide-react';
 import { cn } from '../lib/cn';
@@ -26,6 +27,7 @@ const items: Item[] = [
   { id: 'memory', label: 'Memory', icon: Library, hotkey: '6' },
   { id: 'gateways', label: 'Gateways', icon: Radio, hotkey: '7' },
   { id: 'activity', label: 'Activity', icon: ActivityIcon, hotkey: '8' },
+  { id: 'system', label: 'System', icon: ServerCog, hotkey: '9' },
 ];
 
 export function Sidebar() {
@@ -127,7 +129,7 @@ export function Sidebar() {
             <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--fg-muted)]">
               Stark
             </div>
-            <div className="text-[10px] text-[var(--fg-ghost)]">for Hermes Agent</div>
+            <div className="text-[10px] text-[var(--fg-ghost)]">local agent</div>
           </div>
         </div>
       </div>

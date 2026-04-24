@@ -8,7 +8,6 @@ falls back when the binary isn't on this Mac.
 from __future__ import annotations
 
 import json
-import os
 import re
 import shutil
 import subprocess
@@ -17,6 +16,7 @@ from datetime import datetime
 from typing import Any, Iterator
 
 from .hermes_paths import detect
+from .subprocess_env import sanitized_env
 
 _ANSI = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
 
@@ -47,7 +47,7 @@ def _run_result(args: list[str], timeout: float = 12.0) -> tuple[int, str]:
             timeout=timeout,
             text=True,
             check=False,
-            env={"NO_COLOR": "1", "TERM": "dumb", **os.environ},
+            env=sanitized_env({"NO_COLOR": "1", "TERM": "dumb"}),
         )
         text = _ANSI.sub("", (out.stdout or "") + (("\n" + out.stderr) if out.stderr else ""))
         return out.returncode, text
@@ -103,8 +103,14 @@ def _join_wrapped(a: str, b: str) -> str:
 
 
 def _profile_args(profile: str | None) -> list[str]:
-    if profile and profile != "default":
-        return ["-p", profile]
+    # Defence in depth: even if a caller forgot to validate, refuse to pass
+    # an unsafe profile name to the hermes CLI. This is the last line before
+    # the subprocess boundary — the right place for a hard check.
+    from .validation import safe_profile
+
+    prof = safe_profile(profile)
+    if prof:
+        return ["-p", prof]
     return []
 
 
@@ -151,10 +157,7 @@ def _approx_seconds_ago(label: str) -> int | None:
 
 def list_sessions(profile: str | None) -> list[dict[str, Any]]:
     """Parse `hermes [-p profile] sessions list` into Thread-shaped dicts."""
-    args: list[str] = []
-    if profile and profile != "default":
-        args += ["-p", profile]
-    args += ["sessions", "list"]
+    args = [*_profile_args(profile), "sessions", "list"]
     text = _run(args)
     if not text:
         return []
@@ -207,10 +210,12 @@ def list_sessions(profile: str | None) -> list[dict[str, Any]]:
 
 def read_session(profile: str | None, sid: str) -> dict[str, Any] | None:
     """Export a single session as JSON. Returns the parsed object."""
-    args: list[str] = []
-    if profile and profile != "default":
-        args += ["-p", profile]
-    args += ["sessions", "export", "--session-id", sid, "-"]
+    from .validation import safe_argv
+
+    # sid flows into argv as the value of ``--session-id``. Reject anything
+    # that could be re-parsed as a flag or contains shell/argv metachars.
+    safe_sid = safe_argv(sid, field="session id")
+    args = [*_profile_args(profile), "sessions", "export", "--session-id", safe_sid, "-"]
     text = _run(args, timeout=20.0)
     if not text:
         return None
@@ -464,14 +469,21 @@ def inspect_skill(profile: str | None, identifier: str) -> dict[str, Any]:
 
 
 def install_skill(profile: str | None, identifier: str) -> dict[str, Any]:
-    code, text = _run_result([*_profile_args(profile), "skills", "install", "--yes", identifier], timeout=120.0)
+    # ``--`` stops argparse from treating a leading-dash identifier as a flag.
+    code, text = _run_result(
+        [*_profile_args(profile), "skills", "install", "--yes", "--", identifier],
+        timeout=120.0,
+    )
     if code != 0 or "Error:" in text:
         raise RuntimeError(text.strip() or "Skill install failed.")
     return {"identifier": identifier, "output": text.strip()}
 
 
 def add_skill_tap(profile: str | None, repo: str) -> dict[str, Any]:
-    code, text = _run_result([*_profile_args(profile), "skills", "tap", "add", repo], timeout=60.0)
+    code, text = _run_result(
+        [*_profile_args(profile), "skills", "tap", "add", "--", repo],
+        timeout=60.0,
+    )
     if code != 0 or "Error:" in text:
         raise RuntimeError(text.strip() or "Skill source import failed.")
     return {"repo": repo, "output": text.strip()}
@@ -482,10 +494,7 @@ def add_skill_tap(profile: str | None, repo: str) -> dict[str, Any]:
 
 def list_cron(profile: str | None = None) -> list[dict[str, Any]]:
     """Parse `hermes cron list` block-style output."""
-    args: list[str] = []
-    if profile and profile != "default":
-        args += ["-p", profile]
-    args += ["cron", "list"]
+    args = [*_profile_args(profile), "cron", "list"]
     text = _run(args)
     if not text:
         return []
@@ -553,10 +562,7 @@ def _iso_to_unix(s: str) -> int | None:
 
 
 def list_mcp(profile: str | None = None) -> list[dict[str, Any]]:
-    args: list[str] = []
-    if profile and profile != "default":
-        args += ["-p", profile]
-    args += ["mcp", "list"]
+    args = [*_profile_args(profile), "mcp", "list"]
     text = _run(args)
     if not text or "No MCP servers configured" in text:
         return []

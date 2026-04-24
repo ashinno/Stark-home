@@ -51,16 +51,42 @@ function createWindow(): void {
     icon: iconPath ?? undefined,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
+      // Full renderer sandbox. Preload can still use the subset of Electron
+      // APIs we expose via contextBridge, but renderer JS loses access to
+      // Node primitives and process.* — which it never needed.
+      sandbox: true,
       contextIsolation: true,
       nodeIntegration: false,
+      webSecurity: true,
+      allowRunningInsecureContent: false,
     },
   });
 
   mainWindow.on('ready-to-show', () => mainWindow?.show());
+  // The renderer can ask to open a URL via window.open / target="_blank".
+  // Only forward http(s) — never file://, custom app schemes, or mailto: —
+  // because a compromised renderer could otherwise reach any installed app's
+  // URL handler.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+    if (/^https?:\/\//.test(url)) {
+      void shell.openExternal(url);
+    } else {
+      console.warn('[stark] blocked window-open for non-http(s) url');
+    }
     return { action: 'deny' };
+  });
+  // Refuse any same-window navigation away from the renderer bundle. The
+  // renderer should live on the vite dev server or the file:// bundle
+  // path — anything else means something tried to load untrusted content
+  // into the main frame.
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const allowed =
+      (is.dev && process.env.ELECTRON_RENDERER_URL && url.startsWith(process.env.ELECTRON_RENDERER_URL)) ||
+      url.startsWith('file://');
+    if (!allowed) {
+      console.warn('[stark] blocked will-navigate to', url);
+      event.preventDefault();
+    }
   });
 
   if (is.dev && process.env.ELECTRON_RENDERER_URL) {

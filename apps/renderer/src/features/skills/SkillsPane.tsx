@@ -172,8 +172,8 @@ export function SkillsPane() {
       <div className="flex items-center justify-between border-b border-[var(--line)] px-8 py-5">
         <SectionHeading
           eyebrow="Skills"
-          title="Procedures Hermes has learned"
-          description="Run installed skills, browse the Hermes Skills Hub, or import a GitHub skill source."
+          title="Procedures Stark has learned"
+          description="Run installed skills, browse the Skills Hub, or import a GitHub skill source."
         />
         <div className="flex items-center gap-2">
           <Button variant="secondary" leading={<Github className="h-3.5 w-3.5" />} onClick={() => setImporting(true)}>
@@ -235,7 +235,7 @@ export function SkillsPane() {
             <EmptyState
               icon={<Sparkles className="h-5 w-5" />}
               title="No skills yet"
-              description="Teach Hermes its first move or install one from the marketplace."
+              description="Teach Stark its first move or install one from the marketplace."
               action={<Button variant="primary" onClick={() => setCreating(true)}>Teach a skill</Button>}
             />
           ) : (
@@ -334,7 +334,7 @@ function InstalledSkillCard({
                 ))}
               </ol>
             ) : (
-              <p className="mt-3 text-[13px] text-[var(--fg-muted)]">Installed through Hermes. Run it by invoking its trigger from chat.</p>
+              <p className="mt-3 text-[13px] text-[var(--fg-muted)]">Installed. Run it by invoking its trigger from chat.</p>
             )}
           </div>
         </div>
@@ -353,8 +353,9 @@ function InstalledSkillCard({
           {local && (
             <button
               onClick={() => onRemove(skill.id)}
-              className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] text-[var(--fg-dim)] hover:bg-[var(--bad-wash)] hover:text-[var(--bad)]"
+              className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] text-[var(--fg-dim)] transition-colors hover:bg-[var(--bad-wash)] hover:text-[var(--bad)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
               title="Delete local skill"
+              aria-label="Delete local skill"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -487,7 +488,7 @@ function ImportGitHubDialog({ onClose, onImported }: { onClose: () => void; onIm
   }
 
   return (
-    <Dialog open onClose={onClose} title="Import GitHub repo" description="Add a Hermes skill source, then browse or search its skills from Marketplace.">
+    <Dialog open onClose={onClose} title="Import GitHub repo" description="Add a skill source, then browse or search its skills from Marketplace.">
       <div className="space-y-4">
         <Field label="Repository" hint="owner/repo">
           <Input value={repo} onChange={(e) => setRepo(e.target.value)} placeholder="openai/skills" leading={<Github className="h-4 w-4" />} autoFocus />

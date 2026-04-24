@@ -102,6 +102,16 @@ CHANNELS: list[ChannelSpec] = [
         ],
     ),
     ChannelSpec(
+        id="webhook",
+        name="Webhook",
+        state_key="webhook",
+        fields=[
+            FieldSpec("WEBHOOK_ENABLED", "Enabled (1/0)", required=False),
+            FieldSpec("WEBHOOK_SECRET", "Signing secret", secret=True, required=False),
+            FieldSpec("WEBHOOK_ALLOWED_SOURCES", "Allowed sources", required=False),
+        ],
+    ),
+    ChannelSpec(
         id="email",
         name="Email",
         state_key="email",
@@ -150,20 +160,24 @@ def fingerprint(value: str) -> str:
 
 
 def _root_for(profile: str | None) -> Path:
+    from .validation import safe_profile
+    prof = safe_profile(profile)
     paths = detect()
     base = Path(paths.data_root) if paths else Path.home() / ".hermes"
-    if profile and profile != "default":
-        return base / "profiles" / profile
+    if prof:
+        return base / "profiles" / prof
     return base
 
 
 def _env_paths_for(profile: str | None) -> list[Path]:
     """Profile env wins, global env is the fallback."""
+    from .validation import safe_profile
+    prof = safe_profile(profile)
     paths = detect()
     base = Path(paths.data_root) if paths else Path.home() / ".hermes"
     out: list[Path] = []
-    if profile and profile != "default":
-        out.append(base / "profiles" / profile / ".env")
+    if prof:
+        out.append(base / "profiles" / prof / ".env")
     out.append(base / ".env")
     return out
 

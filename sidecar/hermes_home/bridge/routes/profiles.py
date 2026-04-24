@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 from ..hermes_paths import detect as detect_hermes
 from ..store import get_store
+from ..validation import safe_profile
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 
@@ -36,13 +37,14 @@ def _run(args: list[str], timeout: float = 6.0) -> str | None:
     if not bin_:
         return None
     try:
+        from ..subprocess_env import sanitized_env
         out = subprocess.run(
             [bin_, *args],
             capture_output=True,
             timeout=timeout,
             text=True,
             check=False,
-            env={"NO_COLOR": "1", "TERM": "dumb", **__import__("os").environ},
+            env=sanitized_env({"NO_COLOR": "1", "TERM": "dumb"}),
         )
         return _ANSI.sub("", (out.stdout or "") + "\n" + (out.stderr or ""))
     except Exception:
@@ -140,14 +142,15 @@ class UseRequest(BaseModel):
 async def use_profile(body: UseRequest) -> dict:
     """Mark a profile as active in Stark's settings (does not change the
     Hermes sticky default — for that the user can use `hermes profile use`)."""
+    # Validate the shape of the name before it lands in the store, where it
+    # would later flow into filesystem paths (env files, gateway state) and
+    # argv elements (``hermes -p <profile> …``).
+    validated = safe_profile(body.id) or "default"
     store = get_store()
 
     def mutate(d: dict[str, Any]) -> str:
-        names = [p["id"] for p in (d.get("profiles_cache") or [])]
-        # We don't strictly validate against a cache here — accept any name
-        # and let the next /profiles GET reconcile.
-        d["settings"]["active_profile"] = body.id
-        return body.id
+        d["settings"]["active_profile"] = validated
+        return validated
 
     return {"active": store.mutate(mutate)}
 
