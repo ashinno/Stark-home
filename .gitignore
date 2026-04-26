@@ -10,3 +10,4 @@ legacy-electron/
 *.tsbuildinfo
 __pycache__/
 *.pyc
+.gstack/
