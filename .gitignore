@@ -12,3 +12,5 @@ legacy-electron/
 __pycache__/
 *.pyc
 .gstack/
+.claude/
+output/
