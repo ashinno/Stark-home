@@ -34,7 +34,7 @@ _CLIENT_INFO = {"name": "stark-sidecar", "version": "0.1.0"}
 
 # Outgoing request timeout — lifecycle calls (initialize / new_session) are
 # quick; only session/prompt can legitimately run for minutes.
-_QUICK_TIMEOUT = 15.0
+_QUICK_TIMEOUT = 30.0
 _PROMPT_TIMEOUT = 300.0
 
 
@@ -321,6 +321,8 @@ class ACPClient:
                 {"jsonrpc": "2.0", "id": req_id, "method": method, "params": params}
             )
             return await asyncio.wait_for(fut, timeout=timeout)
+        except asyncio.TimeoutError as exc:
+            raise ACPError(f"{method} timed out after {timeout:.0f}s") from exc
         finally:
             self._pending.pop(req_id, None)
 
@@ -526,6 +528,17 @@ class ACPPool:
             return False
         await client.cancel(session_id)
         return True
+
+    async def reset(self, profile: Optional[str]) -> None:
+        """Drop and close the client for ``profile`` after a lifecycle failure."""
+        key = self._key(profile)
+        async with self._lock:
+            client = self._clients.pop(key, None)
+        if client is not None:
+            try:
+                await client.close()
+            except Exception:
+                logger.debug("error resetting ACP client for %s", key, exc_info=True)
 
     async def shutdown(self) -> None:
         async with self._lock:

@@ -157,7 +157,7 @@ export function GatewaysPane() {
                       <div className="flex items-center gap-3">
                         <div
                           className={cn(
-                            'flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)]',
+                            'flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)]',
                             g.status === 'online'
                               ? 'bg-[var(--ok-wash)] text-[var(--ok)]'
                               : g.configured
@@ -182,7 +182,7 @@ export function GatewaysPane() {
 
                     {/* Configured-keys row */}
                     {g.configured && (
-                      <div className="font-mono mt-3 flex items-center gap-2 rounded-[var(--radius-sm)] bg-[var(--ok-wash)] px-2.5 py-1.5 text-[11px] text-[var(--ok)]">
+                      <div className="font-mono mt-3 flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--ok-wash)] px-2.5 py-1.5 text-[11px] text-[var(--ok)]">
                         <CheckCircle2 className="h-3 w-3" />
                         <span className="uppercase tracking-[0.14em]">already configured</span>
                         {fingerprintField && (
@@ -192,7 +192,7 @@ export function GatewaysPane() {
                     )}
 
                     {g.platform_error && (
-                      <div className="mt-3 rounded-[var(--radius-sm)] bg-[var(--bad-wash)] px-2.5 py-1.5 text-[11px] text-[var(--bad)]">
+                      <div className="mt-3 rounded-[var(--radius-md)] bg-[var(--bad-wash)] px-2.5 py-1.5 text-[11px] text-[var(--bad)]">
                         {g.platform_error}
                       </div>
                     )}
@@ -287,7 +287,7 @@ function StatusIcon({ status }: { status: Status }) {
 function DaemonPill({ daemon }: { daemon: Daemon | null }) {
   if (!daemon) return null;
   return (
-    <div className="font-mono inline-flex items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--line)] bg-[var(--surface-2)] px-2.5 py-1.5 text-[10px] uppercase tracking-[0.16em] text-[var(--fg-muted)]">
+    <div className="font-mono inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--surface-2)] px-2.5 py-1.5 text-[10px] uppercase tracking-[0.16em] text-[var(--fg-muted)]">
       <Dot tone={daemon.running ? 'ok' : 'dim'} pulse={daemon.running} />
       gateway · {daemon.running ? `pid ${daemon.pid}` : 'stopped'}
     </div>
@@ -355,7 +355,7 @@ function ConfigureGatewayDialog({
       }
     >
       {gateway.configured && (
-        <div className="font-mono mb-4 flex items-center gap-2 rounded-[var(--radius-sm)] bg-[var(--ok-wash)] px-3 py-2 text-[11px] uppercase tracking-[0.14em] text-[var(--ok)]">
+        <div className="font-mono mb-4 flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--ok-wash)] px-3 py-2 text-[11px] uppercase tracking-[0.14em] text-[var(--ok)]">
           <CheckCircle2 className="h-3 w-3" />
           already set up · only fill what you want to change
         </div>

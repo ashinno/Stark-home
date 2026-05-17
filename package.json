@@ -10,12 +10,13 @@
     "icon": "node scripts/render-icon.mjs",
     "dev": "electron-vite dev",
     "build": "electron-vite build",
+    "sidecar:bake": "bash sidecar/scripts/build_runtime.sh",
     "preview": "electron-vite preview",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
-    "pack:mac": "electron-vite build && electron-builder --mac --universal",
-    "release:mac": "electron-vite build && electron-builder --mac --universal --publish always"
+    "pack:mac": "npm run sidecar:bake && electron-vite build && electron-builder --mac --universal",
+    "release:mac": "npm run sidecar:bake && electron-vite build && electron-builder --mac --universal --publish always"
   },
   "dependencies": {
     "@fontsource-variable/jetbrains-mono": "^5.1.1",

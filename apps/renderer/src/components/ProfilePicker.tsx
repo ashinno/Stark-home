@@ -182,7 +182,7 @@ export function ProfilePicker({
               </div>
               <button
                 onClick={load}
-                className="rounded-full p-1.5 text-[#7f85a8] transition-colors hover:bg-[#202437] hover:text-[#eff2ff]"
+                className="rounded-full p-1.5 text-[#7f85a8] transition-colors hover:bg-[#202437] hover:text-[#eff2ff] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
                 title="Refresh"
               >
                 <RefreshCcw className="h-3.5 w-3.5" />
@@ -229,6 +229,7 @@ function ProfileRow({
       disabled={busy}
       className={cn(
         'mx-2 flex w-[calc(100%-1rem)] items-start gap-3 rounded-[14px] border px-3 py-3 text-left transition-[background-color,border-color,box-shadow]',
+        'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
         active
           ? 'border-[#4b5fdb] bg-[#222742] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
           : 'border-transparent bg-transparent hover:border-[#2c3150] hover:bg-[#1d2132]',
@@ -293,7 +294,7 @@ function FullGrid({
         <h3 className="font-display text-xl">Profiles on this Mac</h3>
         <button
           onClick={onRefresh}
-          className="font-mono flex items-center gap-1.5 text-[11px] uppercase tracking-[0.16em] text-[var(--fg-muted)] hover:text-[var(--fg)]"
+          className="font-mono flex items-center gap-1.5 rounded-[var(--radius-xs)] text-[11px] uppercase tracking-[0.16em] text-[var(--fg-muted)] transition-colors hover:text-[var(--fg)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
         >
           <RefreshCcw className="h-3 w-3" /> refresh
         </button>
@@ -308,6 +309,7 @@ function FullGrid({
               disabled={busy === p.id}
               className={cn(
                 'flex items-start gap-3 rounded-[var(--radius-md)] border p-4 text-left transition-[background-color,border-color,color,box-shadow,transform] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
+                'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
                 isActive
                   ? 'border-[var(--primary)] bg-[var(--primary-wash)]'
                   : 'border-[var(--line)] bg-[var(--surface-2)] hover:border-[var(--line-strong)]',

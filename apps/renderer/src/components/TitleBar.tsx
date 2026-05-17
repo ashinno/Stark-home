@@ -30,7 +30,7 @@ export function TitleBar() {
         <button
           onClick={() => setPaletteOpen(true)}
           className={cn(
-            'no-drag group flex items-center gap-3 rounded-[var(--radius-sm)]',
+            'no-drag group flex items-center gap-3 rounded-[var(--radius-md)]',
             'border border-[var(--line)] bg-[var(--surface-2)]/60 hover:border-[var(--line-strong)] hover:bg-[var(--surface-2)]',
             'px-3 py-1 text-[12px] text-[var(--fg-muted)]',
             'transition-[background-color,border-color,color] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',

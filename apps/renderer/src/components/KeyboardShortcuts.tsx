@@ -58,7 +58,7 @@ export function KeyboardShortcuts({ open, onClose }: { open: boolean; onClose: (
               {g.items.map((s, i) => (
                 <li
                   key={i}
-                  className="flex items-center justify-between gap-4 rounded-[var(--radius-sm)] px-2 py-1.5 transition-colors duration-[var(--motion-dur-xs)] hover:bg-[var(--surface-2)]/60"
+                  className="flex items-center justify-between gap-4 rounded-[var(--radius-md)] px-2 py-1.5 transition-colors duration-[var(--motion-dur-xs)] hover:bg-[var(--surface-2)]/60"
                 >
                   <span className="text-[13px] text-[var(--fg-muted)]">{s.label}</span>
                   <span className="flex shrink-0 items-center gap-1">

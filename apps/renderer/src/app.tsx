@@ -80,7 +80,7 @@ export function App() {
       const r = await call<{ settings: SidecarSettings }>({ method: 'GET', path: '/settings' });
       if (r.ok && r.data) {
         const s = r.data.settings;
-        if (s.user_name) setUserName(s.user_name);
+        setUserName(s.user_name ?? '');
         if (s.active_provider) setProvider(s.active_provider);
         if (s.active_profile !== undefined) setActiveProfile(s.active_profile);
         if (s.setup_mode) setSetupMode(s.setup_mode);
@@ -172,29 +172,38 @@ export function App() {
     };
   }, [sidecar.state, setEngineInstalled]);
 
-  // Daemon warm status — fetch once on sidecar-ready, then repoll every 1.5s
-  // while a cold-start is in flight (capped at 10 tries / 15s). Repolls
-  // during chat happen in ThreadsPane on the ``done`` frame.
+  // Daemon warm status — fetch once on sidecar-ready, poll quickly while a
+  // cold start is in flight, then keep a light heartbeat so the footer cannot
+  // get stuck on a stale warming state.
   useEffect(() => {
     if (sidecar.state !== 'ready') return;
     let cancelled = false;
-    let attempts = 0;
-    let timer: number | null = null;
+    let warmTimer: number | null = null;
+    let heartbeat: number | null = null;
 
     const tick = async () => {
       if (cancelled) return;
       const s = await refreshDaemonStatus();
       if (cancelled) return;
-      attempts += 1;
       const stillWarming = !!s?.coldStartInFlight;
-      if (stillWarming && attempts < 10) {
-        timer = window.setTimeout(tick, 1500);
+      if (stillWarming && warmTimer === null) {
+        warmTimer = window.setTimeout(() => {
+          warmTimer = null;
+          void tick();
+        }, 1500);
+      } else if (!stillWarming && warmTimer !== null) {
+        window.clearTimeout(warmTimer);
+        warmTimer = null;
       }
     };
     void tick();
+    heartbeat = window.setInterval(() => {
+      void tick();
+    }, 15000);
     return () => {
       cancelled = true;
-      if (timer !== null) window.clearTimeout(timer);
+      if (warmTimer !== null) window.clearTimeout(warmTimer);
+      if (heartbeat !== null) window.clearInterval(heartbeat);
     };
   }, [sidecar.state]);
 

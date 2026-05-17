@@ -640,7 +640,7 @@ function ConfigTab() {
                   el?.setSelectionRange(idx, idx);
                 }
               }}
-              className="flex w-full items-center justify-between rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm text-[var(--fg-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--fg)]"
+              className="flex w-full items-center justify-between rounded-[var(--radius-md)] px-3 py-2 text-left text-sm text-[var(--fg-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--fg)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
             >
               <span className="truncate">{s.label}</span>
               <Badge>{s.fields}</Badge>
@@ -754,7 +754,7 @@ function KeysTab() {
                       onClick={() => void clearKey(item.key)}
                       title={`Clear ${item.key}`}
                       aria-label={`Clear ${item.key}`}
-                      className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] text-[var(--fg-dim)] transition-colors hover:bg-[var(--bad-wash)] hover:text-[var(--bad)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
+                      className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] text-[var(--fg-dim)] transition-colors hover:bg-[var(--bad-wash)] hover:text-[var(--bad)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>

@@ -369,7 +369,7 @@ function StepInstall({
               <ProgressBar value={status.progress} />
             </div>
             {status.line && (
-              <pre className="font-mono mt-3 max-h-40 overflow-auto rounded-[var(--radius-sm)] border border-[var(--line)] bg-[var(--bg)] px-3 py-2 text-[10.5px] leading-snug text-[var(--fg-muted)]">
+              <pre className="font-mono mt-3 max-h-40 overflow-auto rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--bg)] px-3 py-2 text-[10.5px] leading-snug text-[var(--fg-muted)]">
                 {status.line}
               </pre>
             )}
@@ -403,7 +403,7 @@ function StepInstall({
             <div className="text-sm font-medium text-[var(--bad)]">Install failed</div>
             <div className="font-mono mt-1 text-[11px] text-[var(--fg-muted)]">{status.error}</div>
             {status.tail.length > 0 && (
-              <pre className="font-mono mt-2 max-h-32 overflow-auto rounded-[var(--radius-sm)] border border-[var(--line)] bg-[var(--bg)] px-3 py-2 text-[10.5px] leading-snug text-[var(--fg-muted)]">
+              <pre className="font-mono mt-2 max-h-32 overflow-auto rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--bg)] px-3 py-2 text-[10.5px] leading-snug text-[var(--fg-muted)]">
                 {status.tail.join('\n')}
               </pre>
             )}
@@ -456,6 +456,7 @@ function StepMode({
             onClick={() => onChange(m.id)}
             className={cn(
               'rounded-[var(--radius-md)] border p-5 text-left transition-[background-color,border-color,color,box-shadow,transform] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
+              'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
               value === m.id
                 ? 'border-[var(--primary)] bg-[var(--primary-wash)]'
                 : 'border-[var(--line)] bg-[var(--surface-2)] hover:border-[var(--line-strong)]',
@@ -866,7 +867,7 @@ function StepFirstWin({ busy, onFinish }: { busy: boolean; onFinish: (prompt?: s
             key={p}
             disabled={busy}
             onClick={() => onFinish(p)}
-            className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--surface-2)] px-4 py-3 text-left text-sm transition-colors hover:border-[var(--line-strong)] hover:bg-[var(--surface-3)] disabled:opacity-50"
+            className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--surface-2)] px-4 py-3 text-left text-sm transition-colors hover:border-[var(--line-strong)] hover:bg-[var(--surface-3)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)] disabled:opacity-50"
           >
             <span className="text-[var(--fg)]">{p}</span>
             <ArrowRight className="h-3.5 w-3.5 text-[var(--fg-dim)]" />

@@ -1,6 +1,7 @@
 node_modules/
 out/
 dist/
+resources/runtime*/
 legacy-electron/
 .venv/
 .DS_Store

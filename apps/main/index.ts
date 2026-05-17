@@ -1,5 +1,6 @@
 import { app, BrowserWindow, globalShortcut, nativeImage, shell } from 'electron';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
+import { autoUpdater } from 'electron-updater';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { registerIpc } from './ipc';
@@ -109,6 +110,13 @@ function focusMain(): void {
 app.whenReady().then(async () => {
   electronApp.setAppUserModelId(APP_ID);
   app.on('browser-window-created', (_, w) => optimizer.watchWindowShortcuts(w));
+
+  if (!is.dev) {
+    autoUpdater.on('error', (err) => console.warn('[updates] check failed:', err.message));
+    autoUpdater.checkForUpdatesAndNotify().catch((err) =>
+      console.warn('[updates] check failed:', (err as Error).message),
+    );
+  }
 
   registerIpc({
     sidecar,

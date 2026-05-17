@@ -57,7 +57,7 @@ export function Dot({
       className={cn(
         'inline-block h-1.5 w-1.5 rounded-full',
         tones[tone],
-        pulse && 'animate-[stark-pulse_1.6s_ease-in-out_infinite]',
+        pulse && 'animate-[stark-pulse_1.6s_var(--motion-ease-inout)_infinite]',
       )}
     />
   );
@@ -137,7 +137,7 @@ export function ProgressBar({ value }: { value: number }) {
   return (
     <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--surface-2)]">
       <div
-        className="h-full rounded-full bg-[var(--primary)] transition-[width] duration-300 ease-out"
+        className="h-full rounded-full bg-[var(--primary)] transition-[width] duration-[var(--motion-dur-lg)] ease-[var(--motion-ease-out)]"
         style={{ width: `${Math.max(0, Math.min(1, value)) * 100}%` }}
       />
     </div>

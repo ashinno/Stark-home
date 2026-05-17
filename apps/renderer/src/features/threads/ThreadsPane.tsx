@@ -47,6 +47,7 @@ export function ThreadsPane() {
   const setStreaming = useSession((s) => s.setStreaming);
   const reset = useSession((s) => s.resetThread);
   const userName = useSession((s) => s.userName);
+  const setUserName = useSession((s) => s.setUserName);
 
   const [threads, setThreads] = useState<Thread[]>([]);
   const [threadQuery, setThreadQuery] = useState('');
@@ -158,6 +159,43 @@ export function ThreadsPane() {
         setDraft('');
         return;
       }
+      if (text === '/remember' || text.startsWith('/remember ')) {
+        const note = text.replace(/^\/remember\s*/, '').trim();
+        if (!note) {
+          pushToast({
+            kind: 'info',
+            title: 'Nothing to remember yet',
+            description: 'Type /remember followed by the fact Stark should keep.',
+          });
+          return;
+        }
+        if (!opts?.alreadyAppended) {
+          append({ id: `u${Date.now()}`, role: 'user', content: text, createdAt: Date.now() });
+        }
+        const r = await call({ method: 'POST', path: '/memory/notes', body: { text: note } });
+        if (r.ok) {
+          const nameMatch = note.match(/\b(?:my name is|call me)\s+(.{2,80})$/i);
+          const rememberedName = nameMatch?.[1]?.replace(/[.!?]+$/, '').trim();
+          if (rememberedName) {
+            await call({ method: 'PATCH', path: '/settings', body: { user_name: rememberedName } });
+            setUserName(rememberedName);
+          }
+          append({
+            id: `m${Date.now()}`,
+            role: 'assistant',
+            content: rememberedName
+              ? `Remembered: ${note}\n\nI'll call you ${rememberedName}.`
+              : `Remembered: ${note}`,
+            createdAt: Date.now(),
+          });
+          pushToast({ kind: 'success', title: 'Memory saved' });
+          setDraft('');
+        } else {
+          markLastUserError(r.error || 'Could not save memory.');
+          pushToast({ kind: 'error', title: 'Memory failed', description: r.error || 'Could not save memory.' });
+        }
+        return;
+      }
       if (!opts?.alreadyAppended) {
         append({ id: `u${Date.now()}`, role: 'user', content: text, createdAt: Date.now() });
       }
@@ -205,15 +243,27 @@ export function ThreadsPane() {
             // from "warming" to "live" without waiting for the next tick.
             void refreshDaemonStatus();
           } else if (chunk.type === 'error') {
-            markLastUserError(chunk.message);
-            pushToast({ kind: 'error', title: 'Stark failed', description: chunk.message });
+            const message = chunk.message?.trim() || 'Stark failed before it could return error details.';
+            markLastUserError(message);
+            update((m) => ({
+              ...m,
+              content: m.content || `Stark could not finish this turn.\n\n${message}`,
+              error: message,
+            }));
+            void refreshDaemonStatus();
+            pushToast({
+              kind: 'error',
+              title: 'Stark failed',
+              description: message,
+              durationMs: null,
+            });
             setStreaming(false);
           }
         },
         () => setStreaming(false),
       );
     },
-    [streaming, activeProvider, activeProfile, openedSessionId, append, update, patch, setStreaming, reset, pushToast, markLastUserError],
+    [streaming, activeProvider, activeProfile, openedSessionId, append, update, patch, setStreaming, reset, pushToast, markLastUserError, setUserName],
   );
 
   const retry = useCallback(() => {
@@ -280,7 +330,7 @@ export function ThreadsPane() {
                     <button
                       onClick={() => void openSession(t.id)}
                       className={cn(
-                        'group flex w-full items-start gap-2 rounded-[var(--radius-sm)] px-2 py-2 text-left transition-colors',
+                        'group flex w-full items-start gap-2 rounded-[var(--radius-md)] px-2 py-2 text-left transition-colors',
                         opened
                           ? 'bg-[var(--primary-wash)]'
                           : 'hover:bg-[var(--surface-2)]',
@@ -386,8 +436,13 @@ export function ThreadsPane() {
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-8 py-8">
           {messages.length === 0 && <EmptyThread ready={agentReady} />}
           <div className="mx-auto max-w-3xl space-y-6">
-            {messages.map((m) => (
-              <Message key={m.id} msg={m} onRetry={m.error ? retry : undefined} />
+            {messages.map((m, i) => (
+              <Message
+                key={m.id}
+                msg={m}
+                streaming={streaming && i === messages.length - 1 && m.role === 'assistant'}
+                onRetry={m.error ? retry : undefined}
+              />
             ))}
             {streaming &&
               (() => {
@@ -445,8 +500,10 @@ export function ThreadsPane() {
               <button
                 onClick={() => void submit(draft)}
                 disabled={!agentReady || !draft.trim() || streaming}
+                aria-label="Send message"
                 className={cn(
                   'flex h-10 items-center gap-1.5 rounded-[var(--radius-md)] px-3 text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
+                  'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)] disabled:cursor-not-allowed disabled:opacity-60',
                   draft.trim() && !streaming
                     ? 'bg-[var(--primary)] text-[var(--primary-ink)] shadow-[0_8px_20px_-10px_var(--primary-glow)] hover:bg-[var(--primary-hover)]'
                     : 'bg-[var(--surface-2)] text-[var(--fg-ghost)]',
@@ -506,7 +563,7 @@ function EmptyThread({ ready }: { ready: boolean }) {
                 ta.focus();
               }
             }}
-            className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-3.5 py-1.5 text-[12px] text-[var(--fg-muted)] transition-colors hover:border-[var(--primary)]/50 hover:text-[var(--fg)]"
+            className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-3.5 py-1.5 text-[12px] text-[var(--fg-muted)] transition-colors hover:border-[var(--primary)]/50 hover:text-[var(--fg)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
           >
             {p}
           </button>
@@ -516,12 +573,12 @@ function EmptyThread({ ready }: { ready: boolean }) {
   );
 }
 
-function Message({ msg, onRetry }: { msg: ChatMessage; onRetry?: () => void }) {
+function Message({ msg, streaming = false, onRetry }: { msg: ChatMessage; streaming?: boolean; onRetry?: () => void }) {
   const isUser = msg.role === 'user';
   return (
     <div className={cn('flex gap-4 anim-in', isUser && 'justify-end')}>
       {!isUser && (
-        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-sm)] border-2 border-[#1C2340] bg-[#F4EEDF]">
+        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-md)] border-2 border-[#1C2340] bg-[#F4EEDF]">
           <Mascot scale={1} expr="happy" pose="idle" accessory="wings" animate />
         </div>
       )}
@@ -561,7 +618,18 @@ function Message({ msg, onRetry }: { msg: ChatMessage; onRetry?: () => void }) {
               </div>
             )}
             <div className="font-display text-[16px] leading-[1.6] text-[var(--fg)]">
-              <div className="whitespace-pre-wrap">{msg.content || '…'}</div>
+              <div className="whitespace-pre-wrap">
+                {msg.content || '…'}
+                {streaming && (
+                  <span
+                    aria-hidden
+                    className="ml-0.5 inline-block text-[var(--primary)]"
+                    style={{ animation: 'stark-blink 0.9s steps(1, end) infinite' }}
+                  >
+                    ▌
+                  </span>
+                )}
+              </div>
             </div>
           </>
         )}
@@ -573,7 +641,7 @@ function Message({ msg, onRetry }: { msg: ChatMessage; onRetry?: () => void }) {
 function Typing() {
   return (
     <div className="flex items-center gap-4 anim-in">
-      <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-[var(--radius-sm)] border-2 border-[#1C2340] bg-[#F4EEDF]">
+      <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-[var(--radius-md)] border-2 border-[#1C2340] bg-[#F4EEDF]">
         <Mascot scale={1} expr="thinking" pose="think" animate />
       </div>
       <div className="flex items-center gap-1 py-2">
@@ -581,7 +649,7 @@ function Typing() {
           <span
             key={d}
             className="h-1.5 w-1.5 rounded-full bg-[var(--primary)]"
-            style={{ animation: `stark-typing 1.4s ease-in-out ${d}s infinite` }}
+            style={{ animation: `stark-typing 1.4s var(--motion-ease-inout) ${d}s infinite` }}
           />
         ))}
       </div>

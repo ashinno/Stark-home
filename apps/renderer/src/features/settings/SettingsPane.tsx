@@ -418,7 +418,7 @@ function BackupCard() {
           </Button>
           <label
             className={cn(
-              'font-mono inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-[12px] uppercase tracking-[0.14em] text-[var(--fg)] transition-colors',
+              'font-mono inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-[12px] uppercase tracking-[0.14em] text-[var(--fg)] transition-colors',
               busy === 'import'
                 ? 'pointer-events-none opacity-60'
                 : 'cursor-pointer hover:border-[var(--primary)]/60 hover:bg-[var(--primary-wash)] hover:text-[var(--primary)]',
@@ -508,7 +508,7 @@ function AccountTab() {
       {/* Codex sign-in */}
       <Card>
         <div className="flex items-start gap-4 p-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--primary-wash)] text-[var(--primary)]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--primary-wash)] text-[var(--primary)]">
             <Flame className="h-4 w-4" />
           </div>
           <div className="flex-1">
@@ -565,7 +565,7 @@ function AccountTab() {
                   <TerminalIcon className="mt-0.5 h-4 w-4 text-[var(--fg-dim)]" />
                   <div className="flex-1">
                     <p className="text-[var(--fg-muted)]">Codex CLI is not installed. Install with npm:</p>
-                    <code className="font-mono mt-2 block rounded-[var(--radius-sm)] bg-[var(--bg)] px-3 py-2 text-[12px] text-[var(--primary)]">
+                    <code className="font-mono mt-2 block rounded-[var(--radius-md)] bg-[var(--bg)] px-3 py-2 text-[12px] text-[var(--primary)]">
                       npm install -g @openai/codex
                     </code>
                   </div>
@@ -605,7 +605,7 @@ function AccountTab() {
                   key={v}
                   onClick={() => setTheme(v)}
                   className={cn(
-                    'flex flex-1 items-center justify-center gap-2 rounded-[var(--radius-sm)] border px-3 py-2 text-sm transition-colors',
+                    'flex flex-1 items-center justify-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-sm transition-colors',
                     theme === v
                       ? 'border-[var(--primary)] bg-[var(--primary-wash)] text-[var(--primary)]'
                       : 'border-[var(--line)] bg-[var(--surface-2)] text-[var(--fg-muted)]',

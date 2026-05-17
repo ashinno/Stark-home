@@ -27,7 +27,7 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
-  sm: 'h-8 px-3 text-xs rounded-[var(--radius-sm)] gap-1.5',
+  sm: 'h-8 px-3 text-xs rounded-[var(--radius-xs)] gap-1.5',
   md: 'h-10 px-4 text-sm rounded-[var(--radius-md)] gap-2',
   lg: 'h-12 px-5 text-[15px] rounded-[var(--radius-md)] gap-2',
 };
@@ -58,9 +58,13 @@ export function Button({
         className,
       )}
     >
-      {loading ? <Loader2 className="h-3.5 w-3.5 animate-[stark-spin_0.7s_linear_infinite]" /> : leading}
+      {loading ? (
+        <Loader2 className="h-3.5 w-3.5 animate-[stark-spin_0.7s_linear_infinite]" aria-hidden />
+      ) : (
+        leading
+      )}
       {children}
-      {!loading && trailing}
+      {trailing}
     </button>
   );
 }

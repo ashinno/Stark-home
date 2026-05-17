@@ -11,6 +11,22 @@ files:
   - package.json
   - "!**/*.map"
 
+extraResources:
+  - from: resources/runtime-aarch64
+    to: runtime-aarch64
+    filter:
+      - "**/*"
+  - from: resources/runtime-x86_64
+    to: runtime-x86_64
+    filter:
+      - "**/*"
+  - from: resources/icon.png
+    to: icon.png
+  - from: resources/tray-icon.png
+    to: tray-icon.png
+  - from: resources/tray-icon@2x.png
+    to: tray-icon@2x.png
+
 asar: true
 
 mac:

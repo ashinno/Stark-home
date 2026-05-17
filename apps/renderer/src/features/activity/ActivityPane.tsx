@@ -133,7 +133,7 @@ export function ActivityPane() {
                     <div className="mt-2 text-sm">{a.title}</div>
                     <div className="mt-1 text-[12.5px] italic text-[var(--fg-muted)]">{a.reason}</div>
                     {a.preview && (
-                      <pre className="font-mono mt-2 max-h-32 overflow-auto rounded-[var(--radius-sm)] border border-[var(--line)] bg-[var(--bg)] px-3 py-2 text-[11px]">
+                      <pre className="font-mono mt-2 max-h-32 overflow-auto rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--bg)] px-3 py-2 text-[11px]">
                         {a.preview}
                       </pre>
                     )}

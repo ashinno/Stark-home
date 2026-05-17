@@ -23,6 +23,7 @@ import os
 import re
 import time
 import uuid
+from pathlib import Path
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
@@ -30,10 +31,11 @@ from sse_starlette.sse import EventSourceResponse
 
 from .. import hermes_cli
 from ..acp_client import ACPError, get_pool
+from ..hermes_paths import detect as detect_hermes
 from ..rate_limit import chat_rate_limit
 from ..store import get_store
 from ..subprocess_env import sanitized_env
-from ..validation import safe_profile
+from ..validation import contained_path, safe_profile
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +134,91 @@ _CLI_SID_RE = re.compile(r"^(?:cron_[0-9a-f]+_)?\d{8}_\d{6}")
 
 def _is_cli_session_id(sid: str | None) -> bool:
     return bool(sid and _CLI_SID_RE.match(sid))
+
+
+def _read_text_limited(path: Path, limit: int) -> str:
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace").strip()
+    except Exception:
+        return ""
+    if len(text) <= limit:
+        return text
+    return text[:limit].rstrip() + "\n...[truncated]"
+
+
+def _profile_memory_dir(profile: str | None) -> Path | None:
+    paths = detect_hermes()
+    if paths is None:
+        return None
+    prof = safe_profile(profile)
+    if prof:
+        return contained_path(paths.data_root, "profiles", prof, "memories")
+    return contained_path(paths.data_root, "memories")
+
+
+def _memory_context(profile: str | None) -> str:
+    """Build compact long-term context for the engine.
+
+    Stark has app-level pinned notes, while Hermes profiles keep USER.md and
+    MEMORY.md. Chat needs both, otherwise the UI can say memory is enabled
+    while the engine never sees what it should remember.
+    """
+    settings = get_store().read("settings") or {}
+    if "memory" not in (settings.get("capabilities") or []):
+        return ""
+
+    blocks: list[str] = []
+
+    user_name = (settings.get("user_name") or "").strip()
+    if user_name:
+        blocks.append(f"User name: {user_name}")
+
+    notes = get_store().read("pinned_notes") or []
+    note_lines = [
+        str(n.get("text") or "").strip()
+        for n in notes
+        if isinstance(n, dict) and str(n.get("text") or "").strip()
+    ][:20]
+    if note_lines:
+        blocks.append("Stark pinned notes:\n" + "\n".join(f"- {line}" for line in note_lines))
+
+    memory_dir = _profile_memory_dir(profile)
+    if memory_dir is not None:
+        user_md = _read_text_limited(memory_dir / "USER.md", 8_000)
+        if user_md:
+            blocks.append(f"Hermes profile USER.md:\n{user_md}")
+        memory_md = _read_text_limited(memory_dir / "MEMORY.md", 12_000)
+        if memory_md:
+            blocks.append(f"Hermes profile MEMORY.md:\n{memory_md}")
+
+    if not blocks:
+        return ""
+    body = "\n\n".join(blocks)
+    return (
+        "Long-term memory context for this user/profile. Use it naturally; "
+        "do not mention this block unless the user asks what you remember.\n\n"
+        f"{body}"
+    )
+
+
+def _message_with_memory(req: ChatRequest) -> str:
+    memory = _memory_context(req.profile)
+    if not memory:
+        return req.message
+    return f"<stark_memory>\n{memory}\n</stark_memory>\n\n{req.message}"
+
+
+def _exc_message(exc: BaseException, fallback: str) -> str:
+    text = str(exc).strip()
+    return text or fallback
+
+
+async def _stream_cli_recovery(req: ChatRequest, reason: str):
+    """Run one turn through the CLI fallback after ACP lifecycle failure."""
+    logger.warning("Falling back to hermes chat -q: %s", reason)
+    fallback_req = req.copy(update={"session_id": None})
+    async for ev in _stream_hermes_cli(fallback_req):
+        yield ev
 
 
 def _word_chunks(text: str) -> list[str]:
@@ -252,14 +339,23 @@ async def _stream_acp(req: ChatRequest):
         client = await pool.get(bin_, req.profile)
     except Exception as exc:
         logger.exception("Failed to start hermes acp")
+        await pool.reset(validated_profile)
         yield {
             "data": json.dumps({
                 "type": "action-update",
                 "id": thinking_id,
-                "patch": {"status": "failed", "ended_at": int(time.time())},
+                "patch": {
+                    "status": "failed",
+                    "result": _exc_message(exc, "ACP start failed"),
+                    "ended_at": int(time.time()),
+                },
             })
         }
-        yield {"data": json.dumps({"type": "error", "message": f"ACP start failed: {exc}"})}
+        async for ev in _stream_cli_recovery(
+            req,
+            f"ACP start failed: {_exc_message(exc, 'no detail')}",
+        ):
+            yield ev
         return
 
     cwd = os.getcwd()
@@ -273,14 +369,23 @@ async def _stream_acp(req: ChatRequest):
             creating_new = True
         except Exception as exc:
             logger.exception("session/new failed")
+            await pool.reset(validated_profile)
             yield {
                 "data": json.dumps({
                     "type": "action-update",
                     "id": thinking_id,
-                    "patch": {"status": "failed", "ended_at": int(time.time())},
+                    "patch": {
+                        "status": "failed",
+                        "result": _exc_message(exc, "session/new failed"),
+                        "ended_at": int(time.time()),
+                    },
                 })
             }
-            yield {"data": json.dumps({"type": "error", "message": f"ACP new_session failed: {exc}"})}
+            async for ev in _stream_cli_recovery(
+                req,
+                f"ACP new_session failed: {_exc_message(exc, 'no detail')}",
+            ):
+                yield ev
             return
     else:
         # Try to restore the session into the agent if it isn't already there.
@@ -300,18 +405,23 @@ async def _stream_acp(req: ChatRequest):
                 creating_new = True
             except Exception as exc:
                 logger.exception("session/new (after failed load) failed")
+                await pool.reset(validated_profile)
                 yield {
                     "data": json.dumps({
                         "type": "action-update",
                         "id": thinking_id,
-                        "patch": {"status": "failed", "ended_at": int(time.time())},
+                        "patch": {
+                            "status": "failed",
+                            "result": _exc_message(exc, "session/new failed after session/load"),
+                            "ended_at": int(time.time()),
+                        },
                     })
                 }
-                yield {
-                    "data": json.dumps(
-                        {"type": "error", "message": f"ACP new_session failed: {exc}"}
-                    )
-                }
+                async for ev in _stream_cli_recovery(
+                    req,
+                    f"ACP new_session after load failed: {_exc_message(exc, 'no detail')}",
+                ):
+                    yield ev
                 return
 
     # Now that the session is resolved, refresh the thinking card's subtitle
@@ -339,12 +449,13 @@ async def _stream_acp(req: ChatRequest):
 
     # Build multimodal prompt parts when the caller attached anything; else
     # pass the plain text (keeps the fast path unchanged for normal chats).
+    engine_message = _message_with_memory(req)
     prompt_content = (
-        _build_prompt_content(req.message, req.attachments) if req.attachments else None
+        _build_prompt_content(engine_message, req.attachments) if req.attachments else None
     )
 
     try:
-        async for frame in client.prompt(session_id, req.message, content=prompt_content):
+        async for frame in client.prompt(session_id, engine_message, content=prompt_content):
             if "_done" in frame:
                 done_body = frame.get("_done") or {}
                 raw_usage = done_body.get("usage") if isinstance(done_body, dict) else None
@@ -500,7 +611,7 @@ async def _stream_hermes_cli(req: ChatRequest):
     args += [
         "chat",
         "-q",
-        req.message,
+        _message_with_memory(req),
         "-Q",
         "--source",
         "tool",

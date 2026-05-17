@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
   ShieldCheck,
@@ -6,6 +6,7 @@ import {
   Clock3,
   Sparkles,
   Pause,
+  Play,
   MessagesSquare,
   Wrench,
   CalendarClock,
@@ -26,6 +27,38 @@ import type { Approval, Job, Suggestion, Thread } from '@shared/rpc';
 import { cn } from '../../lib/cn';
 import { StarkLoft } from '../../components/stark-loft/StarkLoft';
 
+type SchedulerTask = {
+  id: string;
+  name: string;
+  nl: string;
+  cron: string;
+  enabled: boolean;
+  delivery: string;
+  last_run: number | null;
+  next_run: number | null;
+};
+
+type UsageTotals = {
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+  turns: number;
+  estimated_cost_cents: number;
+};
+
+function greet(name: string): string {
+  const h = new Date().getHours();
+  const phase =
+    h < 5 ? 'Working late' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  return name ? `${phase}, ${name}.` : `${phase}.`;
+}
+
+function compactNum(n: number): string {
+  if (n < 1000) return `${n}`;
+  if (n < 1_000_000) return `${(n / 1000).toFixed(n < 10_000 ? 1 : 0)}k`;
+  return `${(n / 1_000_000).toFixed(1)}M`;
+}
+
 export function HomePane() {
   const userName = useSession((s) => s.userName);
   const appendMessage = useSession((s) => s.appendMessage);
@@ -37,19 +70,25 @@ export function HomePane() {
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [tasks, setTasks] = useState<SchedulerTask[]>([]);
+  const [usage, setUsage] = useState<UsageTotals | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function load() {
-    const [t, a, j, s] = await Promise.all([
+    const [t, a, j, s, k, u] = await Promise.all([
       call<{ threads: Thread[] }>({ method: 'GET', path: '/threads' }),
       call<{ approvals: Approval[] }>({ method: 'GET', path: '/approvals' }),
       call<{ jobs: Job[] }>({ method: 'GET', path: '/jobs' }),
       call<{ suggestions: Suggestion[] }>({ method: 'GET', path: '/suggestions' }),
+      call<{ tasks: SchedulerTask[] }>({ method: 'GET', path: '/scheduler' }),
+      call<{ totals: UsageTotals }>({ method: 'GET', path: '/usage' }),
     ]);
     if (t.ok && t.data) setThreads(t.data.threads);
     if (a.ok && a.data) setApprovals(a.data.approvals);
     if (j.ok && j.data) setJobs(j.data.jobs);
     if (s.ok && s.data) setSuggestions(s.data.suggestions);
+    if (k.ok && k.data) setTasks(k.data.tasks);
+    if (u.ok && u.data) setUsage(u.data.totals);
     setLoading(false);
   }
 
@@ -74,14 +113,16 @@ export function HomePane() {
         </div>
       </section>
 
+      <TodayStrip jobs={jobs} approvals={approvals} tasks={tasks} usage={usage} />
+
       {/* Hero prompt */}
-      <section className="relative px-8 pb-6 pt-10">
+      <section className="relative px-8 pb-6 pt-6">
         <div className="mx-auto max-w-4xl">
           <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--primary)]">
             Control center
           </div>
           <h1 className="mt-2 font-display text-[44px] leading-[1.04] tracking-tight">
-            {userName ? `Hello, ${userName}.` : 'Hello.'}{' '}
+            {greet(userName)}{' '}
             <span className="italic text-[var(--fg-muted)]">What should Stark do?</span>
           </h1>
 
@@ -136,7 +177,7 @@ export function HomePane() {
       <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
         <div className="mx-auto max-w-6xl">
           <FeatureDock onGo={(r) => setRoute(r)} />
-          <div className="stagger mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          <div className="stagger mt-6 grid gap-4 lg:grid-cols-2">
             <div style={{ '--i': 0 } as React.CSSProperties}>
               <Approvals data={approvals} loading={loading} onReview={() => setRoute('threads')} />
             </div>
@@ -144,10 +185,17 @@ export function HomePane() {
               <RunningJobs data={jobs} loading={loading} />
             </div>
             <div style={{ '--i': 2 } as React.CSSProperties}>
+              <SchedulerPeek
+                data={tasks}
+                loading={loading}
+                onOpen={() => setRoute('automations')}
+              />
+            </div>
+            <div style={{ '--i': 3 } as React.CSSProperties}>
               <Recents data={threads} loading={loading} onOpen={() => setRoute('threads')} />
             </div>
-            <Suggestions data={suggestions} onRun={send} />
           </div>
+          <Suggestions data={suggestions} onRun={send} />
         </div>
       </div>
     </div>
@@ -265,7 +313,10 @@ function RunningJobs({ data, loading }: { data: Job[]; loading: boolean }) {
                     </div>
                   )}
                 </div>
-                <button className="text-[var(--fg-dim)] hover:text-[var(--fg)]">
+                <button
+                  aria-label="Pause job"
+                  className="text-[var(--fg-dim)] transition-colors hover:text-[var(--fg)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
+                >
                   <Pause className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -283,7 +334,7 @@ function Recents({ data, onOpen, loading }: { data: Thread[]; onOpen: () => void
       title="Recent threads"
       icon={<MessagesSquare className="h-3.5 w-3.5" />}
       action={
-        <button onClick={onOpen} className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--fg-muted)] hover:text-[var(--fg)]">
+        <button onClick={onOpen} className="font-mono rounded-[var(--radius-xs)] text-[10px] uppercase tracking-[0.14em] text-[var(--fg-muted)] transition-colors hover:text-[var(--fg)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]">
           view all
         </button>
       }
@@ -302,7 +353,7 @@ function Recents({ data, onOpen, loading }: { data: Thread[]; onOpen: () => void
             <li key={t.id}>
               <button
                 onClick={onOpen}
-                className="flex w-full items-start gap-3 px-5 py-3 text-left transition-colors hover:bg-[var(--surface-2)]"
+                className="flex w-full items-start gap-3 px-5 py-3 text-left transition-colors hover:bg-[var(--surface-2)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
               >
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm">{t.title}</div>
@@ -382,7 +433,7 @@ function FeatureDock({ onGo }: { onGo: (r: Route) => void }) {
 function Suggestions({ data, onRun }: { data: Suggestion[]; onRun: (prompt: string) => void }) {
   if (data.length === 0) return null;
   return (
-    <div className="xl:col-span-3">
+    <div className="mt-8">
       <SectionHeading
         eyebrow="Suggested"
         title="Quick wins for today"
@@ -404,5 +455,167 @@ function Suggestions({ data, onRun }: { data: Suggestion[]; onRun: (prompt: stri
         ))}
       </div>
     </div>
+  );
+}
+
+// ───────────── Today strip — single-line pulse above the hero
+
+function TodayStrip({
+  jobs,
+  approvals,
+  tasks,
+  usage,
+}: {
+  jobs: Job[];
+  approvals: Approval[];
+  tasks: SchedulerTask[];
+  usage: UsageTotals | null;
+}) {
+  const nextTask = useMemo(() => {
+    return tasks
+      .filter((t) => t.enabled && typeof t.next_run === 'number')
+      .sort((a, b) => (a.next_run ?? 0) - (b.next_run ?? 0))[0];
+  }, [tasks]);
+
+  const working = jobs.length > 0;
+  const waiting = approvals.length > 0;
+  const stateLabel = working
+    ? `Working · ${jobs.length} ${jobs.length === 1 ? 'job' : 'jobs'}`
+    : waiting
+      ? `Waiting on you · ${approvals.length} ${approvals.length === 1 ? 'approval' : 'approvals'}`
+      : 'Quiet';
+  const tone: 'primary' | 'warn' | 'ok' = working ? 'primary' : waiting ? 'warn' : 'ok';
+
+  const turns = usage?.turns ?? 0;
+  const tokens = usage?.total_tokens ?? 0;
+  const cents = usage?.estimated_cost_cents ?? 0;
+  const hasUsage = turns > 0 || tokens > 0;
+
+  return (
+    <section className="px-8 pt-4">
+      <div
+        className={cn(
+          'mx-auto flex max-w-6xl items-center justify-between gap-4 rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--surface)] px-4 py-1.5',
+          'font-mono text-[10.5px] uppercase tracking-[0.16em] text-[var(--fg-muted)]',
+          'shadow-[var(--shadow-sm)]',
+        )}
+      >
+        <div className="flex items-center gap-2 text-[var(--fg)]">
+          <Dot tone={tone} pulse={working || waiting} />
+          <span>{stateLabel}</span>
+        </div>
+
+        <div className="flex min-w-0 items-center gap-3 overflow-hidden">
+          {hasUsage && (
+            <>
+              <span className="hidden sm:inline">
+                <strong className="text-[var(--fg)]">{turns}</strong> turns
+              </span>
+              <Sep />
+              <span>
+                <strong className="text-[var(--fg)]">{compactNum(tokens)}</strong> tok
+              </span>
+              {cents > 0 && (
+                <>
+                  <Sep />
+                  <span>~${(cents / 100).toFixed(2)}</span>
+                </>
+              )}
+            </>
+          )}
+          {nextTask && nextTask.next_run && (
+            <>
+              {hasUsage && <Sep className="hidden md:inline" />}
+              <span className="hidden truncate md:inline">
+                next · <span className="text-[var(--fg)]">{nextTask.name}</span>{' '}
+                {relTime(nextTask.next_run * 1000)}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Sep({ className }: { className?: string }) {
+  return <span className={cn('opacity-30', className)}>·</span>;
+}
+
+// ───────────── Scheduler peek — next automations on Home
+
+function SchedulerPeek({
+  data,
+  loading,
+  onOpen,
+}: {
+  data: SchedulerTask[];
+  loading: boolean;
+  onOpen: () => void;
+}) {
+  const upcoming = useMemo(() => {
+    return data
+      .filter((t) => t.enabled && typeof t.next_run === 'number')
+      .sort((a, b) => (a.next_run ?? 0) - (b.next_run ?? 0))
+      .slice(0, 4);
+  }, [data]);
+
+  return (
+    <CardShell
+      title="Up next"
+      icon={<CalendarClock className="h-3.5 w-3.5" />}
+      action={
+        <button
+          onClick={onOpen}
+          className="font-mono rounded-[var(--radius-xs)] text-[10px] uppercase tracking-[0.14em] text-[var(--fg-muted)] transition-colors hover:text-[var(--fg)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
+        >
+          all automations
+        </button>
+      }
+    >
+      {loading && upcoming.length === 0 ? (
+        <ListSkeleton lines={3} />
+      ) : upcoming.length === 0 ? (
+        <div className="px-5 py-8 text-center text-sm text-[var(--fg-muted)]">
+          Nothing scheduled. Want a morning brief?{' '}
+          <button
+            onClick={onOpen}
+            className="text-[var(--primary)] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
+          >
+            Add one →
+          </button>
+        </div>
+      ) : (
+        <ul className="divide-y divide-[var(--line)]">
+          {upcoming.map((t) => (
+            <li key={t.id}>
+              <button
+                onClick={onOpen}
+                className="flex w-full items-start gap-3 px-5 py-3 text-left transition-colors hover:bg-[var(--surface-2)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
+              >
+                <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--radius-xs)] bg-[var(--primary-wash)] text-[var(--primary)]">
+                  <Play className="h-3 w-3" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm">{t.name}</span>
+                    <Badge tone="neutral">
+                      <span className="font-mono">{t.cron}</span>
+                    </Badge>
+                  </div>
+                  <div className="font-mono mt-0.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-[var(--fg-ghost)]">
+                    <span>{t.delivery}</span>
+                    <span className="opacity-40">·</span>
+                    <span>
+                      next · {t.next_run ? relTime(t.next_run * 1000) : '—'}
+                    </span>
+                  </div>
+                </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </CardShell>
   );
 }

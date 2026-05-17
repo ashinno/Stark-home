@@ -51,7 +51,7 @@ export function Sidebar() {
       <div className="font-mono mb-2 mt-1 px-3 text-[10px] uppercase tracking-[0.22em] text-[var(--fg-ghost)]">
         Control center
       </div>
-      <div ref={rowRef} className="relative flex flex-col gap-0.5">
+      <div ref={rowRef} className="relative">
         {indicator && (
           <span
             aria-hidden
@@ -64,45 +64,47 @@ export function Sidebar() {
             }}
           />
         )}
-        {items.map(({ id, label, icon: Icon, hotkey }, i) => {
-          const active = route === id;
-          return (
-            <button
-              key={id}
-              ref={(el) => {
-                if (el) btnRefs.current.set(id, el);
-                else btnRefs.current.delete(id);
-              }}
-              onClick={() => setRoute(id)}
-              aria-current={active ? 'page' : undefined}
-              style={{ '--i': i } as React.CSSProperties}
-              className={cn(
-                'group relative flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-sm',
-                'transition-[background-color,color] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
-                'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
-                active
-                  ? 'bg-[var(--primary-wash)] text-[var(--fg)]'
-                  : 'text-[var(--fg-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--fg)]',
-              )}
-            >
-              <Icon
+        <div className="stagger flex flex-col gap-0.5">
+          {items.map(({ id, label, icon: Icon, hotkey }, i) => {
+            const active = route === id;
+            return (
+              <button
+                key={id}
+                ref={(el) => {
+                  if (el) btnRefs.current.set(id, el);
+                  else btnRefs.current.delete(id);
+                }}
+                onClick={() => setRoute(id)}
+                aria-current={active ? 'page' : undefined}
+                style={{ '--i': i } as React.CSSProperties}
                 className={cn(
-                  'h-4 w-4 transition-colors duration-[var(--motion-dur-sm)]',
-                  active ? 'text-[var(--primary)]' : 'text-[var(--fg-dim)]',
-                )}
-              />
-              <span className="flex-1 text-left">{label}</span>
-              <span
-                className={cn(
-                  'transition-opacity duration-[var(--motion-dur-sm)]',
-                  active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100',
+                  'group relative flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-sm',
+                  'transition-[background-color,color] duration-[var(--motion-dur-sm)] ease-[var(--motion-ease-out)]',
+                  'focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]',
+                  active
+                    ? 'bg-[var(--primary-wash)] text-[var(--fg)]'
+                    : 'text-[var(--fg-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--fg)]',
                 )}
               >
-                <Kbd>⌘{hotkey}</Kbd>
-              </span>
-            </button>
-          );
-        })}
+                <Icon
+                  className={cn(
+                    'h-4 w-4 transition-colors duration-[var(--motion-dur-sm)]',
+                    active ? 'text-[var(--primary)]' : 'text-[var(--fg-dim)]',
+                  )}
+                />
+                <span className="flex-1 text-left">{label}</span>
+                <span
+                  className={cn(
+                    'transition-opacity duration-[var(--motion-dur-sm)]',
+                    active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100',
+                  )}
+                >
+                  <Kbd>⌘{hotkey}</Kbd>
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="mt-auto flex flex-col gap-3">

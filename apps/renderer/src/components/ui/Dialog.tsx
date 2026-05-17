@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../../lib/cn';
 import { Presence } from './Presence';
@@ -22,6 +22,8 @@ export function Dialog({
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<Element | null>(null);
+  const titleId = useId();
+  const descId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -41,9 +43,26 @@ export function Dialog({
   }, [open]);
 
   useEffect(() => {
-    if (!open || !closable) return;
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && closable) {
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const focusables = panelRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusables?.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -57,7 +76,9 @@ export function Dialog({
         className="fixed inset-0 z-50 flex items-center justify-center p-6"
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-labelledby={title ? titleId : undefined}
+        aria-describedby={description ? descId : undefined}
+        aria-label={title ? undefined : 'Dialog'}
       >
         <div
           className="absolute inset-0 bg-[var(--bg)]/80 backdrop-blur-md"
@@ -77,10 +98,10 @@ export function Dialog({
             <div className="flex items-start justify-between gap-6 px-7 pt-6 pb-3">
               <div>
                 {title && (
-                  <h2 className="font-display text-[28px] leading-tight">{title}</h2>
+                  <h2 id={titleId} className="font-display text-[28px] leading-tight">{title}</h2>
                 )}
                 {description && (
-                  <p className="mt-1 text-sm text-[var(--fg-muted)]">{description}</p>
+                  <p id={descId} className="mt-1 text-sm text-[var(--fg-muted)]">{description}</p>
                 )}
               </div>
               {closable && (

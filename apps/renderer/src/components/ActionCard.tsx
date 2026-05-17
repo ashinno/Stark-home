@@ -54,6 +54,7 @@ export function ActionCard({
   const needsApproval = action.status === 'needs-approval';
   const running = action.status === 'running';
   const failed = action.status === 'failed';
+  const actionTime = (action.ended_at ?? action.started_at) * 1000;
 
   const statusIcon = running ? (
     <Loader2 className="h-3.5 w-3.5 animate-[stark-spin_0.8s_linear_infinite] text-[var(--fg-dim)]" />
@@ -98,7 +99,7 @@ export function ActionCard({
           <div className="mt-1 text-[13.5px] text-[var(--fg)]">{action.title}</div>
           <div className="mt-1 text-[12px] italic text-[var(--fg-muted)]">{action.reason}</div>
           {action.result && (
-            <pre className="font-mono mt-2 max-h-40 overflow-auto rounded-[var(--radius-sm)] border border-[var(--line)] bg-[var(--bg)] px-3 py-2 text-[11.5px] leading-relaxed text-[var(--fg-muted)]">
+            <pre className="font-mono mt-2 max-h-40 overflow-auto rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--bg)] px-3 py-2 text-[11.5px] leading-relaxed text-[var(--fg-muted)]">
               {action.result}
             </pre>
           )}
@@ -106,7 +107,7 @@ export function ActionCard({
         <div className="flex shrink-0 items-center gap-2 text-[10px] text-[var(--fg-ghost)]">
           {statusIcon}
           <span className="font-mono uppercase tracking-[0.14em]">
-            {action.ended_at ? relTime(action.ended_at) : relTime(action.started_at)}
+            {relTime(actionTime)}
           </span>
         </div>
       </div>

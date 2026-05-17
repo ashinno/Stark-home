@@ -353,7 +353,7 @@ function InstalledSkillCard({
           {local && (
             <button
               onClick={() => onRemove(skill.id)}
-              className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] text-[var(--fg-dim)] transition-colors hover:bg-[var(--bad-wash)] hover:text-[var(--bad)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
+              className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] text-[var(--fg-dim)] transition-colors hover:bg-[var(--bad-wash)] hover:text-[var(--bad)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
               title="Delete local skill"
               aria-label="Delete local skill"
             >

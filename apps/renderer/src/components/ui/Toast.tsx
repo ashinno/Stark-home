@@ -66,6 +66,11 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
   const [exiting, setExiting] = useState(false);
   const dur = toast.durationMs === undefined ? VISIBLE_MS : toast.durationMs;
 
+  const dismissWithExit = () => {
+    setExiting(true);
+    window.setTimeout(onDismiss, EXIT_MS);
+  };
+
   useEffect(() => {
     if (dur === null) return;
     const t = window.setTimeout(() => setExiting(true), dur);
@@ -94,7 +99,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
         <button
           onClick={() => {
             toast.action?.onClick();
-            onDismiss();
+            dismissWithExit();
           }}
           className={cn(
             'font-mono shrink-0 rounded-[var(--radius-xs)] border border-[var(--line)] bg-[var(--surface)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--fg)]',
@@ -106,7 +111,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
         </button>
       )}
       <button
-        onClick={onDismiss}
+        onClick={dismissWithExit}
         aria-label="Dismiss"
         className="rounded-[var(--radius-xs)] p-0.5 text-[var(--fg-ghost)] transition-colors duration-[var(--motion-dur-sm)] hover:bg-[var(--surface-3)] hover:text-[var(--fg)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
       >

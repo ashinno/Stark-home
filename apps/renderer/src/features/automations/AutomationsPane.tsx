@@ -27,6 +27,7 @@ export function AutomationsPane() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [inspecting, setInspecting] = useState<Task | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
   const push = useToast((s) => s.push);
 
   const load = async () => {
@@ -39,13 +40,17 @@ export function AutomationsPane() {
   }, []);
 
   async function toggle(id: string) {
+    setBusy(`toggle:${id}`);
     await call({ method: 'POST', path: `/scheduler/${id}/toggle` });
     await load();
+    setBusy(null);
   }
   async function run(id: string) {
+    setBusy(`run:${id}`);
     await call({ method: 'POST', path: `/scheduler/${id}/run-now` });
     push({ kind: 'success', title: 'Queued' });
     await load();
+    setBusy(null);
   }
   function remove(id: string) {
     const prior = tasks.find((t) => t.id === id);
@@ -122,18 +127,19 @@ export function AutomationsPane() {
                       size="sm"
                       variant="ghost"
                       leading={t.enabled ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                      loading={busy === `toggle:${t.id}`}
                       onClick={() => toggle(t.id)}
                     >
                       {t.enabled ? 'Pause' : 'Resume'}
                     </Button>
-                    <Button size="sm" variant="signal" leading={<Play className="h-3 w-3" />} onClick={() => run(t.id)}>
+                    <Button size="sm" variant="signal" leading={<Play className="h-3 w-3" />} loading={busy === `run:${t.id}`} onClick={() => run(t.id)}>
                       Run now
                     </Button>
                     <button
                       onClick={() => remove(t.id)}
                       aria-label={`Delete ${t.name}`}
                       title="Delete"
-                      className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] text-[var(--fg-dim)] transition-colors hover:bg-[var(--bad-wash)] hover:text-[var(--bad)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
+                      className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] text-[var(--fg-dim)] transition-colors hover:bg-[var(--bad-wash)] hover:text-[var(--bad)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)]"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -154,7 +160,7 @@ export function AutomationsPane() {
               </div>
             ) : (
               inspecting.history.map((h, i) => (
-                <div key={i} className="flex items-start justify-between gap-3 rounded-[var(--radius-sm)] bg-[var(--surface-2)] px-3 py-2 text-[12.5px]">
+                <div key={i} className="flex items-start justify-between gap-3 rounded-[var(--radius-md)] bg-[var(--surface-2)] px-3 py-2 text-[12.5px]">
                   <div>
                     <div className="font-mono uppercase tracking-[0.14em] text-[var(--fg-muted)]">{h.status}</div>
                     <div className="text-[var(--fg)]">{h.message}</div>
@@ -199,10 +205,10 @@ function CreateTaskDialog({ onClose, onCreated }: { onClose: () => void; onCreat
               <button
                 key={d}
                 onClick={() => setDelivery(d)}
-                className={`rounded-[var(--radius-sm)] border px-3 py-2 text-sm ${
+                className={`rounded-[var(--radius-md)] border px-3 py-2 text-sm transition-colors duration-[var(--motion-dur-sm)] focus-visible:outline-none focus-visible:[box-shadow:var(--ring-focus)] ${
                   delivery === d
                     ? 'border-[var(--primary)] bg-[var(--primary-wash)]'
-                    : 'border-[var(--line)] bg-[var(--surface-2)]'
+                    : 'border-[var(--line)] bg-[var(--surface-2)] hover:border-[var(--line-strong)]'
                 }`}
               >
                 {d}

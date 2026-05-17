@@ -49,7 +49,17 @@ export class SidecarManager extends EventEmitter {
     if (devPython) return { bin: devPython, module: devModule };
     if (!app.isPackaged) return { bin: 'python3', module: devModule };
 
-    // Production: ~/Library/Application Support/Hermes/runtime/bin/python3
+    // Production preference: bundled runtime baked into Contents/Resources.
+    // Legacy fallback: ~/Library/Application Support/Hermes/runtime/bin/python3.
+    const runtimeName = process.arch === 'arm64' ? 'runtime-aarch64' : 'runtime-x86_64';
+    const bundled = join(process.resourcesPath, runtimeName, 'bin', 'python3');
+    if (existsSync(bundled)) {
+      return {
+        bin: bundled,
+        module: join(process.resourcesPath, runtimeName),
+      };
+    }
+
     const home = app.getPath('home');
     const hermes = join(home, 'Library', 'Application Support', 'Hermes');
     return {
@@ -210,12 +220,12 @@ export class SidecarManager extends EventEmitter {
       const { value, done } = await reader.read();
       if (done) break;
       buf += decoder.decode(value, { stream: true });
-      let idx;
-      while ((idx = buf.indexOf('\n\n')) !== -1) {
-        const frame = buf.slice(0, idx);
-        buf = buf.slice(idx + 2);
+      let match: RegExpExecArray | null;
+      while ((match = /\r?\n\r?\n/.exec(buf)) !== null) {
+        const frame = buf.slice(0, match.index);
+        buf = buf.slice(match.index + match[0].length);
         const dataLine = frame.split('\n').find((l) => l.startsWith('data: '));
-        if (dataLine) yield dataLine.slice(6);
+        if (dataLine) yield dataLine.slice(6).trimEnd();
       }
     }
   }
